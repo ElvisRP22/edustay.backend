@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
  * críticas que realicen los usuarios
  */
 @Entity
+@Table(name = "logs_auditoria")
 public class LogAuditoria {
 
     @Id
