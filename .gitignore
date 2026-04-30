@@ -61,6 +61,3 @@ logs/
 # =========================
 .DS_Store
 Thumbs.db
-.env
-.idea/
-*.local
