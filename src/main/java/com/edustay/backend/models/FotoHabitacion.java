@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Entidad que maneja las habitaciones que los estudiantes marcan
- * como favoritas o a fin con sus intereses
+ * Entidad que permite manejar las fotos de las habitaciones
  */
 @Entity
 @Table(name = "fotos_habitacion")

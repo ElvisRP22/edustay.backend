@@ -1,6 +1,8 @@
 package com.edustay.backend.models;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.edustay.backend.models.enums.UserRole;
 import com.edustay.backend.models.enums.VerificationStatus;
@@ -71,6 +73,15 @@ public class Usuario {
     // Relación 1:1 con PerfilEstudiante (se define en el otro lado con @JoinColumn)
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private PerfilEstudiante perfilEstudiante;
+
+    @ManyToMany
+    @JoinTable(
+            name = "favoritos", // Nombre de la tabla intermedia en la BD
+            joinColumns = @JoinColumn(name = "usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "habitacion_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"usuario_id", "habitacion_id"})
+    )
+    private Set<Habitacion> habitacionesFavoritas = new HashSet<>();
 
     public Usuario() {
     }
@@ -177,5 +188,13 @@ public class Usuario {
 
     public void setPerfilEstudiante(PerfilEstudiante perfilEstudiante) {
         this.perfilEstudiante = perfilEstudiante;
+    }
+
+    public Set<Habitacion> getHabitacionesFavoritas() {
+        return habitacionesFavoritas;
+    }
+
+    public void setHabitacionesFavoritas(Set<Habitacion> habitacionesFavoritas) {
+        this.habitacionesFavoritas = habitacionesFavoritas;
     }
 }

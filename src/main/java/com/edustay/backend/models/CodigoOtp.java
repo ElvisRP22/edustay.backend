@@ -1,6 +1,8 @@
 package com.edustay.backend.models;
 
 import jakarta.persistence.*;
+
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Random;
 /**
@@ -8,7 +10,10 @@ import java.util.Random;
  * mediante email
  */
 @Entity
+@Table(name = "codigos_otp")
 public class CodigoOtp {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,8 +46,8 @@ public class CodigoOtp {
     @PrePersist
     protected void onCreate() {
         // 1. Generación automática del código de 6 dígitos (ej: 054210)
-        Random random = new Random();
-        this.codigo = String.format("%06d", random.nextInt(1000000));
+        SecureRandom random = new SecureRandom();
+        this.codigo = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
 
         // 2. Definición automática de la expiración (10 minutos desde ahora)
         this.expiracion = LocalDateTime.now().plusMinutes(10);

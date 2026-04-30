@@ -27,6 +27,7 @@ public class DocumentoVerificacion {
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private DocType tipo;
 
     @NotBlank
@@ -39,6 +40,7 @@ public class DocumentoVerificacion {
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private VerificationStatus estado = VerificationStatus.PENDIENTE;
 
     @Column(columnDefinition = "TEXT")
