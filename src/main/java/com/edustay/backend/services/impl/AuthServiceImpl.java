@@ -1,4 +1,4 @@
-package com.edustay.backend.services;
+package com.edustay.backend.services.impl;
 
 import com.edustay.backend.dto.AuthResponse;
 import com.edustay.backend.dto.LoginRequest;
@@ -8,13 +8,14 @@ import com.edustay.backend.models.enums.UserRole;
 import com.edustay.backend.models.enums.VerificationStatus;
 import com.edustay.backend.repositories.UsuarioRepository;
 import com.edustay.backend.security.JwtTokenProvider;
+import com.edustay.backend.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Servicio de autenticación que maneja login y registro
+ * Implementación del servicio de autenticación que maneja login y registro
  */
 @Service
 @Transactional
