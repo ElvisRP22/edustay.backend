@@ -1,101 +1,93 @@
-# 🛠️ Configuración del Entorno de Desarrollo - EduStay
+# 🎓 EduStay - Backend
 
-Este proyecto sigue buenas prácticas profesionales separando:
+Sistema backend para la plataforma de alquiler de habitaciones para estudiantes.
 
-* **Perfiles de Spring (`dev`, `prod`)** → controlan el comportamiento de la aplicación
-* **Variables de entorno (`.env`)** → gestionan credenciales y configuración sensible
+## 🚀 Quick Start
 
-Esto permite trabajar en equipo sin exponer datos sensibles y sin afectar otros entornos.
+### Requisitos
+- Java 21+
+- MySQL 8.0+
 
----
-
-# 🧠 Arquitectura de Configuración
-
-```text
-src/main/resources/
- ├── application.properties        # Configuración base (segura)
- ├── application-dev.properties    # Configuración de desarrollo
- ├── application-prod.properties   # Configuración de producción
-
-.env.properties   # Variables locales (NO versionado)
-.env.example      # Plantilla (SÍ versionado)
-```
-
----
-
-# ⚙️ 1. Configuración Base (application.properties)
-
-Archivo base seguro que se aplica a todos los entornos:
-
-```properties
-spring.application.name=edustay.backend
-
-# =========================
-# BASE DE DATOS (usa .env)
-# =========================
-spring.config.import=optional:file:.env.properties
-
-spring.datasource.url=jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:edustay_db}?createDatabaseIfNotExist=true&serverTimezone=UTC
-spring.datasource.username=${DB_USER:root}
-spring.datasource.password=${DB_PASS}
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-# =========================
-# JPA BASE (seguro)
-# =========================
-spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
-
-# Configuración segura por defecto
-spring.jpa.show-sql=false
-spring.jpa.hibernate.ddl-auto=none
-
-# Dialecto MySQL
-spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
-```
-
----
-
-# 🔧 2. Perfil de Desarrollo (application-dev.properties)
-
-Configuración usada solo en desarrollo:
-
-```properties
-# Mostrar SQL en consola
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-
-# Actualiza el esquema automáticamente (solo dev)
-spring.jpa.hibernate.ddl-auto=update
-```
-
----
-
-# 🚀 3. Perfil de Producción (application-prod.properties)
-
-Configuración segura para producción:
-
-```properties
-spring.jpa.show-sql=false
-
-# No modifica la BD, solo válida estructura
-spring.jpa.hibernate.ddl-auto=validate
-```
-
----
-
-# 🔐 4. Variables de Entorno (.env.properties)
-
-## 📌 Paso 1: Crear archivo local
-
-Copia el archivo de ejemplo:
+### 1. Configurar variables de entorno
 
 ```bash
 cp .env.example .env.properties
+# Edita .env.properties con tus credenciales
+```
+
+### 2. Ejecutar en desarrollo
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=dev"
+```
+
+La API estará disponible en: `http://localhost:8080`
+
+### 3. Swagger Documentation
+
+Una vez ejecutada la aplicación:
+
+```
+http://localhost:8080/swagger-ui/index.html
 ```
 
 ---
 
-## 📌 Paso 2: Configurar tus credenciales
+## 📚 Documentación
+
+- **[DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Setup local, compilación, troubleshooting
+- **[AUTHENTICATION.md](docs/AUTHENTICATION.md)** - Guía JWT, integración frontend
+- **[API.md](docs/API.md)** - Referencia completa de endpoints
+
+---
+
+## 🏗️ Arquitectura
+
+### Stack Tecnológico
+
+- **Spring Boot 4.0.6** - Framework web
+- **Spring Security** - Autenticación y autorización
+- **JWT (JJWT)** - Token based authentication
+- **MySQL 8.0** - Base de datos
+- **Hibernate/JPA** - ORM
+
+### Estructura del Proyecto
+
+```
+src/main/
+├── java/com/edustay/backend/
+│   ├── config/        # Configuración (Security, etc)
+│   ├── controllers/   # REST endpoints
+│   ├── dto/           # Objetos de transferencia de datos
+│   ├── exceptions/    # Manejo de excepciones
+│   ├── models/        # Entidades JPA
+│   ├── repositories/  # Acceso a BD
+│   ├── security/      # Seguridad (JWT, filters)
+│   └── services/      # Lógica de negocio
+└── resources/
+    ├── application.properties
+    ├── application-dev.properties
+    └── application-prod.properties
+```
+
+---
+
+## 🔐 Autenticación
+
+El proyecto implementa autenticación con JWT:
+
+- **Endpoints públicos:** `/api/auth/login`, `/api/auth/register`
+- **Endpoints protegidos:** Requieren header `Authorization: Bearer <token>`
+- **Expiración:** 24 horas
+- **Encriptación:** BCrypt para contraseñas
+
+Ver [AUTHENTICATION.md](docs/AUTHENTICATION.md) para guía completa.
+
+---
+
+## 🛠️ Configuración Base (application.properties)
+
+El proyecto usa perfiles de Spring para diferenciar ambientes:
 
 ```properties
 DB_HOST=localhost
