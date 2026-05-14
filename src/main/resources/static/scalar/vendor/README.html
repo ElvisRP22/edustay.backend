@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scalar vendor files - instrucciones</title>
+</head>
+<body>
+  <h1>Vendorizar archivos de Scalar</h1>
+  <p>Si el navegador bloquea los recursos desde el CDN, descarga estos archivos y colócalos en <code>/static/scalar/vendor/</code>:</p>
+  <ul>
+    <li><code>standalone.js</code> - el bundle principal de <code>@scalar/api-reference</code></li>
+    <li><code>scalar.css</code> - el CSS de temas: <code>@scalar/themes</code></li>
+  </ul>
+
+  <h2>Comandos sugeridos</h2>
+  <p>Desde la carpeta del proyecto puedes ejecutar (ejemplo manual):</p>
+  <pre>
+curl -L https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest/dist/standalone.js -o src/main/resources/static/scalar/vendor/standalone.js
+curl -L https://cdn.jsdelivr.net/npm/@scalar/themes@latest/dist/scalar.css -o src/main/resources/static/scalar/vendor/scalar.css
+  </pre>
+
+  <p>Después reinicia la aplicación y abre <a href="/docs">/docs</a>.</p>
+</body>
+</html>
