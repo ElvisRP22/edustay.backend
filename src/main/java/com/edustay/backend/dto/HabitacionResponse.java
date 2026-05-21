@@ -2,6 +2,7 @@ package com.edustay.backend.dto;
 
 import com.edustay.backend.models.enums.RoomStatus;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /**
  * DTO para respuestas de habitación
@@ -20,13 +21,16 @@ public class HabitacionResponse {
     private LocalDateTime fechaPublicacion;
     private Long arrendadorId;
     private String arrendadorNombre;
+    private Set<ServicioResponse> servicios;
+    private Set<ReglaResponse> reglas;
 
     // Constructores
     public HabitacionResponse() {}
 
     public HabitacionResponse(Long id, String titulo, String descripcion, Double precio, String direccion, 
                              Double latitud, Double longitud, Integer distanciaUtpMinutos, RoomStatus estado, 
-                             LocalDateTime fechaPublicacion, Long arrendadorId, String arrendadorNombre) {
+                             LocalDateTime fechaPublicacion, Long arrendadorId, String arrendadorNombre,
+                             Set<ServicioResponse> servicios, Set<ReglaResponse> reglas) {
         this.id = id;
         this.titulo = titulo;
         this.descripcion = descripcion;
@@ -39,6 +43,8 @@ public class HabitacionResponse {
         this.fechaPublicacion = fechaPublicacion;
         this.arrendadorId = arrendadorId;
         this.arrendadorNombre = arrendadorNombre;
+        this.servicios = servicios;
+        this.reglas = reglas;
     }
 
     // Getters y Setters
@@ -77,4 +83,20 @@ public class HabitacionResponse {
 
     public String getArrendadorNombre() { return arrendadorNombre; }
     public void setArrendadorNombre(String arrendadorNombre) { this.arrendadorNombre = arrendadorNombre; }
+
+    public Set<ServicioResponse> getServicios() {
+        return servicios;
+    }
+
+    public void setServicios(Set<ServicioResponse> servicios) {
+        this.servicios = servicios;
+    }
+
+    public Set<ReglaResponse> getReglas() {
+        return reglas;
+    }
+
+    public void setReglas(Set<ReglaResponse> reglas) {
+        this.reglas = reglas;
+    }
 }

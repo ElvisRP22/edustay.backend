@@ -1,5 +1,6 @@
 package com.edustay.backend.services;
 
+import com.edustay.backend.dto.VerificacionPerfilResponse;
 import com.edustay.backend.dto.PerfilEstudianteRequest;
 import com.edustay.backend.dto.PerfilEstudianteResponse;
 
@@ -13,4 +14,7 @@ public interface PerfilEstudianteService {
 
     /** Crea o actualiza el perfil extendido del estudiante */
     PerfilEstudianteResponse guardarPerfil(Long usuarioId, PerfilEstudianteRequest request);
+
+    /** Obtiene un resumen unificado de perfil y estado de verificación del usuario autenticado */
+    VerificacionPerfilResponse obtenerResumenVerificacion(Long usuarioId);
 }

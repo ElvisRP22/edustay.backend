@@ -1,6 +1,7 @@
 package com.edustay.backend.controllers;
 
 import com.edustay.backend.dto.AuthResponse;
+import com.edustay.backend.dto.GoogleTokenDto;
 import com.edustay.backend.dto.LoginRequest;
 import com.edustay.backend.dto.RegisterRequest;
 import com.edustay.backend.services.AuthService;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
  * Controller para manejar las operaciones de autenticación (login y registro)
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping({"/api/auth", "/api/v1/auth"})
 @Tag(name = "Autenticación", description = "Endpoints para autenticación y registro de usuarios")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
@@ -74,6 +75,28 @@ public class AuthController {
                     ? HttpStatus.BAD_REQUEST
                     : HttpStatus.CONFLICT;
             return ResponseEntity.status(status)
+                    .body(new AuthResponse(null, null, null, null, null, null, null, null, e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint para login social con Google.
+     * Recibe el tokenId desde el frontend y devuelve el JWT propio de EduStay.
+     */
+    @PostMapping("/google")
+    @Operation(summary = "Login con Google", description = "Autentica o registra un usuario usando Google ID Token")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login con Google exitoso", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AuthResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Token inválido"),
+            @ApiResponse(responseCode = "401", description = "Token expirado o no verificado"),
+            @ApiResponse(responseCode = "500", description = "Error del servidor")
+    })
+    public ResponseEntity<AuthResponse> loginConGoogle(@Valid @RequestBody GoogleTokenDto googleTokenDto) {
+        try {
+            AuthResponse response = authService.loginConGoogle(googleTokenDto);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthResponse(null, null, null, null, null, null, null, null, e.getMessage()));
         }
     }

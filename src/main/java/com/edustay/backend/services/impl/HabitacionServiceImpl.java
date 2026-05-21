@@ -1,18 +1,27 @@
 package com.edustay.backend.services.impl;
 
+import com.edustay.backend.dto.ReglaResponse;
 import com.edustay.backend.dto.HabitacionRequest;
 import com.edustay.backend.dto.HabitacionResponse;
+import com.edustay.backend.dto.ServicioResponse;
 import com.edustay.backend.models.Habitacion;
+import com.edustay.backend.models.Regla;
+import com.edustay.backend.models.Servicio;
 import com.edustay.backend.models.Usuario;
 import com.edustay.backend.models.enums.RoomStatus;
+import com.edustay.backend.repositories.ReglaRepository;
 import com.edustay.backend.repositories.HabitacionRepository;
+import com.edustay.backend.repositories.ServicioRepository;
 import com.edustay.backend.repositories.UsuarioRepository;
 import com.edustay.backend.services.HabitacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +36,12 @@ public class HabitacionServiceImpl implements HabitacionService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ServicioRepository servicioRepository;
+
+    @Autowired
+    private ReglaRepository reglaRepository;
 
     // Coordenadas de UTP Piura (aproximadas)
     private static final double UTP_LATITUD = -5.192;
@@ -48,6 +63,8 @@ public class HabitacionServiceImpl implements HabitacionService {
         habitacion.setDireccion(request.getDireccion());
         habitacion.setLatitud(request.getLatitud());
         habitacion.setLongitud(request.getLongitud());
+        habitacion.setServicios(cargarServicios(request.getServicioIds()));
+        habitacion.setReglas(cargarReglas(request.getReglaIds()));
         
         // Calcular distancia a UTP
         Integer distanciaMinutos = calcularDistanciaUtpMinutos(request.getLatitud(), request.getLongitud());
@@ -98,6 +115,8 @@ public class HabitacionServiceImpl implements HabitacionService {
         habitacion.setDireccion(request.getDireccion());
         habitacion.setLatitud(request.getLatitud());
         habitacion.setLongitud(request.getLongitud());
+        habitacion.setServicios(cargarServicios(request.getServicioIds()));
+        habitacion.setReglas(cargarReglas(request.getReglaIds()));
         
         // Recalcular distancia
         Integer distanciaMinutos = calcularDistanciaUtpMinutos(request.getLatitud(), request.getLongitud());
@@ -157,6 +176,18 @@ public class HabitacionServiceImpl implements HabitacionService {
      * Convierte un Habitacion a HabitacionResponse
      */
     private HabitacionResponse convertirAResponse(Habitacion habitacion) {
+        Set<ServicioResponse> servicios = habitacion.getServicios() == null
+            ? Collections.emptySet()
+            : habitacion.getServicios().stream()
+            .map(servicio -> new ServicioResponse(servicio.getId(), servicio.getNombre()))
+            .collect(Collectors.toSet());
+
+        Set<ReglaResponse> reglas = habitacion.getReglas() == null
+            ? Collections.emptySet()
+            : habitacion.getReglas().stream()
+            .map(regla -> new ReglaResponse(regla.getId(), regla.getDescripcion()))
+            .collect(Collectors.toSet());
+
         return new HabitacionResponse(
                 habitacion.getId(),
                 habitacion.getTitulo(),
@@ -169,7 +200,33 @@ public class HabitacionServiceImpl implements HabitacionService {
                 habitacion.getEstado(),
                 habitacion.getFechaPublicacion(),
                 habitacion.getArrendador().getId(),
-                habitacion.getArrendador().getNombre()
+                habitacion.getArrendador().getNombre(),
+                servicios,
+                reglas
         );
+    }
+
+    private Set<Servicio> cargarServicios(Set<Long> servicioIds) {
+        if (servicioIds == null || servicioIds.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        List<Servicio> servicios = servicioRepository.findAllById(servicioIds);
+        if (servicios.size() != servicioIds.size()) {
+            throw new RuntimeException("Uno o más servicios no existen");
+        }
+        return new HashSet<>(servicios);
+    }
+
+    private Set<Regla> cargarReglas(Set<Long> reglaIds) {
+        if (reglaIds == null || reglaIds.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        List<Regla> reglas = reglaRepository.findAllById(reglaIds);
+        if (reglas.size() != reglaIds.size()) {
+            throw new RuntimeException("Una o más reglas no existen");
+        }
+        return new HashSet<>(reglas);
     }
 }

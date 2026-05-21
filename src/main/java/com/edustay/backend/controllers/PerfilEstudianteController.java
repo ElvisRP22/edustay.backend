@@ -2,6 +2,7 @@ package com.edustay.backend.controllers;
 
 import com.edustay.backend.dto.PerfilEstudianteRequest;
 import com.edustay.backend.dto.PerfilEstudianteResponse;
+import com.edustay.backend.dto.VerificacionPerfilResponse;
 import com.edustay.backend.services.PerfilEstudianteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -59,6 +60,21 @@ public class PerfilEstudianteController {
             @Valid @RequestBody PerfilEstudianteRequest request,
             @RequestAttribute("userId") Long userId) {
         return ResponseEntity.ok(perfilEstudianteService.guardarPerfil(userId, request));
+    }
+
+    /**
+     * GET /api/perfil/verificacion - Obtiene un resumen unificado del estado del perfil y la verificación.
+     */
+    @GetMapping("/verificacion")
+    @Operation(summary = "Resumen de verificación", description = "Obtiene el estado del perfil, documentos y verificación del usuario autenticado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Resumen obtenido exitosamente",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = VerificacionPerfilResponse.class))),
+            @ApiResponse(responseCode = "401", description = "No autenticado")
+    })
+    public ResponseEntity<VerificacionPerfilResponse> obtenerResumenVerificacion(@RequestAttribute("userId") Long userId) {
+        return ResponseEntity.ok(perfilEstudianteService.obtenerResumenVerificacion(userId));
     }
 
     /**

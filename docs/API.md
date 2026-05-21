@@ -65,6 +65,40 @@ Valida si un token es válido.
 
 ---
 
+### GET /api/perfil/verificacion
+
+Obtiene un resumen unificado del estado del perfil y la verificación del usuario autenticado.
+
+**Headers:**
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+**Respuesta (200):**
+```json
+{
+  "usuarioId": 1,
+  "nombre": "Juan",
+  "apellido": "Pérez",
+  "email": "juan@example.com",
+  "emailVerificado": true,
+  "identidadVerificada": "EN_PROCESO",
+  "perfilCompleto": true,
+  "perfilRegistrado": true,
+  "carrera": "Ingeniería Informática",
+  "ciclo": 4,
+  "universidad": "UTP Piura",
+  "fotoCarnetUrl": "https://...",
+  "totalDocumentos": 2,
+  "documentosPendientes": 1,
+  "documentosVerificados": 0,
+  "documentosRechazados": 1,
+  "siguientePaso": "Revisa los documentos rechazados y vuelve a subirlos"
+}
+```
+
+---
+
 ## Estructura de Respuestas
 
 ### Respuesta Exitosa (Auth)
