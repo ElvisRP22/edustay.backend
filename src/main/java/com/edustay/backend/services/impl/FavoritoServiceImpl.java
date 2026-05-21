@@ -1,6 +1,8 @@
 package com.edustay.backend.services.impl;
 
+import com.edustay.backend.dto.ReglaResponse;
 import com.edustay.backend.dto.HabitacionResponse;
+import com.edustay.backend.dto.ServicioResponse;
 import com.edustay.backend.models.Favorito;
 import com.edustay.backend.models.Habitacion;
 import com.edustay.backend.models.Usuario;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 /**
@@ -81,7 +84,13 @@ public class FavoritoServiceImpl implements FavoritoService {
                 h.getEstado(),
                 h.getFechaPublicacion(),
                 h.getArrendador().getId(),
-                h.getArrendador().getNombre()
+                h.getArrendador().getNombre(),
+                h.getServicios() == null ? Collections.emptySet() : h.getServicios().stream()
+                    .map(servicio -> new ServicioResponse(servicio.getId(), servicio.getNombre()))
+                    .collect(java.util.stream.Collectors.toSet()),
+                h.getReglas() == null ? Collections.emptySet() : h.getReglas().stream()
+                    .map(regla -> new ReglaResponse(regla.getId(), regla.getDescripcion()))
+                    .collect(java.util.stream.Collectors.toSet())
         );
     }
 }

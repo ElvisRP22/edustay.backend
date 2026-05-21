@@ -75,7 +75,13 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                     // Permitir acceso público a todos los endpoints de autenticación
-                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/auth/**", "/api/v1/auth/**").permitAll()
+
+                    // Permitir lectura pública de habitaciones para la vista pública
+                    .requestMatchers(HttpMethod.GET, "/api/habitaciones/**").permitAll()
+
+                    // Permitir lectura pública de catálogos de servicios y reglas
+                    .requestMatchers(HttpMethod.GET, "/api/catalogos/habitaciones/**").permitAll()
 
                         // Permitir acceso a documentación Scalar/OpenAPI
                         .requestMatchers("/docs", "/v3/api-docs", "/v3/api-docs/**", "/scalar/**").permitAll()

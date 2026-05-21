@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.util.Set;
+
 /**
  * DTO para crear o actualizar una habitación
  */
@@ -27,6 +29,9 @@ public class HabitacionRequest {
     
     @NotNull(message = "La longitud es obligatoria")
     private Double longitud;
+
+    private Set<Long> servicioIds;
+    private Set<Long> reglaIds;
 
     // Constructores
     public HabitacionRequest() {}
@@ -58,4 +63,20 @@ public class HabitacionRequest {
 
     public Double getLongitud() { return longitud; }
     public void setLongitud(Double longitud) { this.longitud = longitud; }
+
+    public Set<Long> getServicioIds() {
+        return servicioIds;
+    }
+
+    public void setServicioIds(Set<Long> servicioIds) {
+        this.servicioIds = servicioIds;
+    }
+
+    public Set<Long> getReglaIds() {
+        return reglaIds;
+    }
+
+    public void setReglaIds(Set<Long> reglaIds) {
+        this.reglaIds = reglaIds;
+    }
 }

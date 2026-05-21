@@ -1,6 +1,7 @@
 package com.edustay.backend.services;
 
 import com.edustay.backend.dto.AuthResponse;
+import com.edustay.backend.dto.GoogleTokenDto;
 import com.edustay.backend.dto.LoginRequest;
 import com.edustay.backend.dto.RegisterRequest;
 import com.edustay.backend.models.Usuario;
@@ -19,6 +20,11 @@ public interface AuthService {
      * Realiza el registro de un nuevo usuario
      */
     AuthResponse register(RegisterRequest registerRequest);
+
+    /**
+     * Realiza el login social con Google usando el tokenId del frontend.
+     */
+    AuthResponse loginConGoogle(GoogleTokenDto googleTokenDto);
 
     /**
      * Obtiene un usuario por su email

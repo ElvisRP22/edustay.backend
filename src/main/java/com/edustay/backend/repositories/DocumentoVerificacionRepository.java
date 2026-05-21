@@ -24,6 +24,16 @@ public interface DocumentoVerificacionRepository extends JpaRepository<Documento
     List<DocumentoVerificacion> findByEstado(VerificationStatus estado);
 
     /**
+     * Cuenta documentos de un usuario específico.
+     */
+    long countByUsuarioId(Long usuarioId);
+
+    /**
+     * Cuenta documentos de un usuario por estado.
+     */
+    long countByUsuarioIdAndEstado(Long usuarioId, VerificationStatus estado);
+
+    /**
      * Verifica si todos los documentos de un usuario están verificados
      */
     boolean existsByUsuarioIdAndEstadoNot(Long usuarioId, VerificationStatus estado);

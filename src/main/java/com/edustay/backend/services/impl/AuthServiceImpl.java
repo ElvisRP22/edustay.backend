@@ -1,6 +1,7 @@
 package com.edustay.backend.services.impl;
 
 import com.edustay.backend.dto.AuthResponse;
+import com.edustay.backend.dto.GoogleTokenDto;
 import com.edustay.backend.dto.LoginRequest;
 import com.edustay.backend.dto.RegisterRequest;
 import com.edustay.backend.models.Usuario;
@@ -9,10 +10,20 @@ import com.edustay.backend.models.enums.VerificationStatus;
 import com.edustay.backend.repositories.UsuarioRepository;
 import com.edustay.backend.security.JwtTokenProvider;
 import com.edustay.backend.services.AuthService;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.UUID;
 
 /**
  * Implementación del servicio de autenticación que maneja login y registro
@@ -28,7 +39,13 @@ public class AuthServiceImpl implements AuthService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
+    // Inyecta aquí tu servicio JWT actual (JwtTokenProvider) para reutilizar la generación del token propio de EduStay.
     private JwtTokenProvider jwtTokenProvider;
+
+    @Value("${app.google.client-id}")
+    private String googleClientId;
+
+    private final SecureRandom secureRandom = new SecureRandom();
 
     /**
      * Realiza el login de un usuario
@@ -122,6 +139,53 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
+     * Realiza el login social con Google.
+     * Verifica el token ID, crea el usuario si no existe y retorna el JWT propio de EduStay.
+     */
+    @Override
+    public AuthResponse loginConGoogle(GoogleTokenDto googleTokenDto) {
+        GoogleIdTokenVerifier verifier = buildGoogleIdTokenVerifier();
+        GoogleIdToken googleIdToken;
+
+        try {
+            googleIdToken = verifier.verify(googleTokenDto.getTokenId());
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudo verificar el token de Google");
+        }
+
+        if (googleIdToken == null) {
+            throw new RuntimeException("Token de Google inválido o expirado");
+        }
+
+        Payload payload = googleIdToken.getPayload();
+        String email = payload.getEmail();
+        String nombre = extractNombre(payload);
+        String apellido = extractApellido(payload);
+        String fotoUrl = (String) payload.get("picture");
+
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseGet(() -> crearUsuarioDesdeGoogle(email, nombre, apellido, fotoUrl));
+
+        String token = jwtTokenProvider.generateToken(
+                usuario.getEmail(),
+                usuario.getId(),
+                usuario.getRol().toString()
+        );
+
+        return new AuthResponse(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getApellido(),
+                usuario.getEmail(),
+                usuario.getTelefono(),
+                usuario.getFotoUrl(),
+                usuario.getRol(),
+                token,
+                "Login con Google exitoso"
+        );
+    }
+
+    /**
      * Obtiene un usuario por su email
      * @param email Email del usuario
      * @return Usuario si existe
@@ -141,5 +205,67 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public boolean existeEmail(String email) {
         return usuarioRepository.existsByEmail(email);
+    }
+
+    private GoogleIdTokenVerifier buildGoogleIdTokenVerifier() {
+        if (googleClientId == null || googleClientId.isBlank()) {
+            throw new RuntimeException("La configuración app.google.client-id es obligatoria para validar Google Sign-In");
+        }
+
+        return new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance())
+                .setAudience(Collections.singletonList(googleClientId))
+                .build();
+    }
+
+    private Usuario crearUsuarioDesdeGoogle(String email, String nombre, String apellido, String fotoUrl) {
+        Usuario nuevoUsuario = new Usuario();
+        nuevoUsuario.setNombre(nombre);
+        nuevoUsuario.setApellido(apellido);
+        nuevoUsuario.setEmail(email);
+        nuevoUsuario.setPassword(passwordEncoder.encode(generarPasswordAleatoria()));
+        nuevoUsuario.setRol(UserRole.ESTUDIANTE);
+        nuevoUsuario.setFotoUrl(fotoUrl);
+        nuevoUsuario.setEmailVerificado(true);
+        nuevoUsuario.setIdentidadVerificada(VerificationStatus.PENDIENTE);
+
+        return usuarioRepository.save(nuevoUsuario);
+    }
+
+    private String extractNombre(Payload payload) {
+        String givenName = (String) payload.get("given_name");
+        if (givenName != null && !givenName.isBlank()) {
+            return givenName;
+        }
+
+        String fullName = (String) payload.get("name");
+        if (fullName != null && !fullName.isBlank()) {
+            String[] parts = fullName.trim().split("\\s+");
+            return parts[0];
+        }
+
+        return "Usuario";
+    }
+
+    private String extractApellido(Payload payload) {
+        String familyName = (String) payload.get("family_name");
+        if (familyName != null && !familyName.isBlank()) {
+            return familyName;
+        }
+
+        String fullName = (String) payload.get("name");
+        if (fullName != null && !fullName.isBlank()) {
+            String[] parts = fullName.trim().split("\\s+");
+            if (parts.length > 1) {
+                return String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length));
+            }
+        }
+
+        return "";
+    }
+
+    private String generarPasswordAleatoria() {
+        byte[] seed = new byte[24];
+        secureRandom.nextBytes(seed);
+        return UUID.nameUUIDFromBytes(seed).toString() + "-" + System.currentTimeMillis();
     }
 }
