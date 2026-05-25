@@ -4,6 +4,7 @@ import com.edustay.backend.dto.AuthResponse;
 import com.edustay.backend.dto.GoogleTokenDto;
 import com.edustay.backend.dto.LoginRequest;
 import com.edustay.backend.dto.RegisterRequest;
+import com.edustay.backend.security.JwtTokenProvider;
 import com.edustay.backend.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.edustay.backend.repositories.UsuarioRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +30,12 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     /**
      * Endpoint para el login de un usuario
@@ -115,14 +123,35 @@ public class AuthController {
     })
     public ResponseEntity<String> validateToken(
             @RequestHeader(value = "Authorization", required = false) String token) {
-        if (token == null || token.isEmpty()) {
+        if (token == null || token.isBlank()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token no proporcionado");
         }
 
-        // Eliminar el prefijo "Bearer " si existe
         String jwt = token.startsWith("Bearer ") ? token.substring(7) : token;
+        if (!jwtTokenProvider.validateToken(jwt)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o expirado");
+        }
 
-        // La validación se hará en el filtro JWT, pero aquí retornamos un endpoint
+        // Además de validar firma/expiración, comprobar que el usuario existe en la BD
+        try {
+            Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
+            boolean exists = false;
+            if (userId != null) {
+                exists = usuarioRepository.findById(userId).isPresent();
+            } else {
+                String email = jwtTokenProvider.getEmailFromToken(jwt);
+                if (email != null && !email.isBlank()) {
+                    exists = usuarioRepository.findByEmail(email).isPresent();
+                }
+            }
+
+            if (!exists) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no encontrado");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido o usuario no encontrado");
+        }
+
         return ResponseEntity.ok("Token válido");
     }
 }

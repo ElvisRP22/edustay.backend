@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Random;
 /**
  * Entidad que representa a los códigos OTP que se usaran para verificación
  * mediante email
@@ -46,7 +45,6 @@ public class CodigoOtp {
     @PrePersist
     protected void onCreate() {
         // 1. Generación automática del código de 6 dígitos (ej: 054210)
-        SecureRandom random = new SecureRandom();
         this.codigo = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
 
         // 2. Definición automática de la expiración (10 minutos desde ahora)

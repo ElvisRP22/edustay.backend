@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -48,10 +50,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = jwtTokenProvider.getUserIdFromToken(jwt);
                 String rol = jwtTokenProvider.getRolFromToken(jwt);
 
-                // Crear objeto de autenticación
-                // Usamos ArrayList vacío porque no necesitamos roles en este contexto
+                // Crear objeto de autenticación con las autoridades derivadas del rol en el token
+                GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + rol);
                 UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(email, null, new ArrayList<>());
+                    new UsernamePasswordAuthenticationToken(email, null, java.util.List.of(authority));
                 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 

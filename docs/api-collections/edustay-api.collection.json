@@ -1,0 +1,817 @@
+{
+  "info": {
+    "_postman_id": "edustay-api-avance2",
+    "name": "EduStay API - Avance 2 (Apidog Compatible)",
+    "description": "Coleccion completa para pruebas de la API de EduStay. Compatible con Apidog (importar como Postman v2.1).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "jwt", "value": "" },
+    { "key": "userId", "value": "1" },
+    { "key": "otroUsuarioId", "value": "2" },
+    { "key": "arrendadorId", "value": "2" },
+    { "key": "estudianteId", "value": "1" },
+    { "key": "habitacionId", "value": "1" },
+    { "key": "resenaId", "value": "1" },
+    { "key": "alquilerId", "value": "1" },
+    { "key": "reporteId", "value": "1" },
+    { "key": "verificacionId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "01 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Demo\",\n  \"apellido\": \"Usuario\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"password123\",\n  \"confirmPassword\": \"password123\",\n  \"telefono\": \"999999999\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login (captura JWT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var data = {};",
+                  "try { data = pm.response.json(); } catch (e) {}",
+                  "if (data.token) { pm.environment.set('jwt', data.token); }",
+                  "pm.test('JWT guardado en variable jwt', function () {",
+                  "  pm.expect(pm.environment.get('jwt')).to.not.be.oneOf([null, '']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login con Google",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenId\": \"GOOGLE_ID_TOKEN_AQUI\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/google",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "google"]
+            }
+          }
+        },
+        {
+          "name": "Validate token",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "validate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Catalogos Habitaciones",
+      "item": [
+        {
+          "name": "Listar servicios (publico)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogos/habitaciones/servicios",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "catalogos", "habitaciones", "servicios"]
+            }
+          }
+        },
+        {
+          "name": "Listar reglas (publico)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/catalogos/habitaciones/reglas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "catalogos", "habitaciones", "reglas"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Habitaciones",
+      "item": [
+        {
+          "name": "Crear habitacion (ARRENDADOR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Habitacion Demo Avance 2\",\n  \"descripcion\": \"A 10 minutos de la UTP\",\n  \"precio\": 450.0,\n  \"direccion\": \"Av. Universitaria 123\",\n  \"latitud\": -12.0715,\n  \"longitud\": -77.0642,\n  \"servicioIds\": [1, 2],\n  \"reglaIds\": [1]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/habitaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "habitaciones"]
+            }
+          }
+        },
+        {
+          "name": "Obtener todas (publico)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/habitaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "habitaciones"]
+            }
+          }
+        },
+        {
+          "name": "Obtener por ID (publico)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/habitaciones/{{habitacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "habitaciones", "{{habitacionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener por arrendador",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/habitaciones/arrendador/{{arrendadorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "habitaciones", "arrendador", "{{arrendadorId}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener disponibles (publico)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/habitaciones/estado/disponibles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "habitaciones", "estado", "disponibles"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar habitacion (ARRENDADOR)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Habitacion Demo Actualizada\",\n  \"descripcion\": \"Ahora con mejor vista\",\n  \"precio\": 500.0,\n  \"direccion\": \"Av. Universitaria 123\",\n  \"latitud\": -12.0715,\n  \"longitud\": -77.0642,\n  \"servicioIds\": [1, 2],\n  \"reglaIds\": [1]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/habitaciones/{{habitacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "habitaciones", "{{habitacionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar habitacion (ARRENDADOR)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/habitaciones/{{habitacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "habitaciones", "{{habitacionId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Perfil",
+      "item": [
+        {
+          "name": "Obtener mi perfil",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/perfil",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "perfil"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar mi perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrera\": \"Ingenieria de Software\",\n  \"ciclo\": 6,\n  \"preferenciasConvivencia\": \"Ambiente tranquilo por las noches\",\n  \"fotoCarnetUrl\": \"https://cdn.ejemplo.com/carnet.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/perfil",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "perfil"]
+            }
+          }
+        },
+        {
+          "name": "Resumen verificacion",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/perfil/verificacion",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "perfil", "verificacion"]
+            }
+          }
+        },
+        {
+          "name": "Obtener perfil por usuarioId",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/perfil/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "perfil", "{{userId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Documentos Verificacion",
+      "item": [
+        {
+          "name": "Subir documento",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"DNI\",\n  \"archivoUrl\": \"https://cdn.ejemplo.com/documentos/dni-demo.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documentos"]
+            }
+          }
+        },
+        {
+          "name": "Mis documentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/documentos/mis-documentos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documentos", "mis-documentos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Verificaciones (ADMIN)",
+      "item": [
+        {
+          "name": "Listar todas",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/verificaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "verificaciones"]
+            }
+          }
+        },
+        {
+          "name": "Listar pendientes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/verificaciones/pendientes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "verificaciones", "pendientes"]
+            }
+          }
+        },
+        {
+          "name": "Listar por usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/verificaciones/usuario/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "verificaciones", "usuario", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar estado documento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"VERIFICADO\",\n  \"comentarioAdmin\": \"Documento valido y legible\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/verificaciones/{{verificacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "verificaciones", "{{verificacionId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Favoritos",
+      "item": [
+        {
+          "name": "Obtener favoritos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/favoritos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favoritos"]
+            }
+          }
+        },
+        {
+          "name": "Agregar favorito",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/favoritos/{{habitacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favoritos", "{{habitacionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Quitar favorito",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/favoritos/{{habitacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favoritos", "{{habitacionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Check favorito",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/favoritos/{{habitacionId}}/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favoritos", "{{habitacionId}}", "check"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Mensajes",
+      "item": [
+        {
+          "name": "Enviar mensaje",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receptorId\": {{otroUsuarioId}},\n  \"habitacionId\": {{habitacionId}},\n  \"contenido\": \"Hola, sigue disponible la habitacion?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mensajes"]
+            }
+          }
+        },
+        {
+          "name": "Obtener conversacion",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes/conversacion?habitacionId={{habitacionId}}&otroUsuarioId={{otroUsuarioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mensajes", "conversacion"],
+              "query": [
+                { "key": "habitacionId", "value": "{{habitacionId}}" },
+                { "key": "otroUsuarioId", "value": "{{otroUsuarioId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bandeja de entrada",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes/bandeja",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mensajes", "bandeja"]
+            }
+          }
+        },
+        {
+          "name": "Contar no leidos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes/no-leidos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mensajes", "no-leidos"]
+            }
+          }
+        },
+        {
+          "name": "Marcar conversacion como leida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensajes/conversacion/leer?habitacionId={{habitacionId}}&emisorId={{otroUsuarioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mensajes", "conversacion", "leer"],
+              "query": [
+                { "key": "habitacionId", "value": "{{habitacionId}}" },
+                { "key": "emisorId", "value": "{{otroUsuarioId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Alquileres",
+      "item": [
+        {
+          "name": "Crear alquiler",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habitacionId\": {{habitacionId}},\n  \"montoPactado\": 450.0,\n  \"fechaInicio\": \"2026-05-25T10:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/alquileres",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alquileres"]
+            }
+          }
+        },
+        {
+          "name": "Mis alquileres",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alquileres/mis-alquileres",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alquileres", "mis-alquileres"]
+            }
+          }
+        },
+        {
+          "name": "Mis arrendamientos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alquileres/mis-arrendamientos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alquileres", "mis-arrendamientos"]
+            }
+          }
+        },
+        {
+          "name": "Listar todos alquileres",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alquileres",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alquileres"]
+            }
+          }
+        },
+        {
+          "name": "Obtener alquiler por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alquileres/{{alquilerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alquileres", "{{alquilerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Finalizar alquiler",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alquileres/{{alquilerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alquileres", "{{alquilerId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Resenas",
+      "item": [
+        {
+          "name": "Crear resena",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"calificacion\": 5,\n  \"comentario\": \"Excelente habitacion y buen trato\",\n  \"habitacionId\": {{habitacionId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resenas"]
+            }
+          }
+        },
+        {
+          "name": "Listar por habitacion",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas/habitacion/{{habitacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resenas", "habitacion", "{{habitacionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Listar por estudiante",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas/estudiante/{{estudianteId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resenas", "estudiante", "{{estudianteId}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener resena por ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas/{{resenaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resenas", "{{resenaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar resena",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"calificacion\": 4,\n  \"comentario\": \"Actualizacion de resena\",\n  \"habitacionId\": {{habitacionId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas/{{resenaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resenas", "{{resenaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar resena",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas/{{resenaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resenas", "{{resenaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Validar ya calificada",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/resenas/validar/{{estudianteId}}/{{habitacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "resenas", "validar", "{{estudianteId}}", "{{habitacionId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 Reportes",
+      "item": [
+        {
+          "name": "Crear reporte",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"habitacionId\": {{habitacionId}},\n  \"motivo\": \"Fotos enganosas\",\n  \"descripcion\": \"Las fotos no coinciden con el estado real del cuarto\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reportes"]
+            }
+          }
+        },
+        {
+          "name": "Listar todos reportes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reportes"]
+            }
+          }
+        },
+        {
+          "name": "Mis reportes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/mis-reportes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reportes", "mis-reportes"]
+            }
+          }
+        },
+        {
+          "name": "Reportes por habitacion",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reportes/habitacion/{{habitacionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reportes", "habitacion", "{{habitacionId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

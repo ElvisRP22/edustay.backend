@@ -1,6 +1,5 @@
 package com.edustay.backend.dto;
 
-import com.edustay.backend.models.enums.ReportStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

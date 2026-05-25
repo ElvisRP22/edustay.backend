@@ -2,7 +2,6 @@ package com.edustay.backend.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +13,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Utilidad para manejar operaciones JWT (generación, validación, extracción de claims)
+ * Utilidad para manejar operaciones JWT (generación, validación, extracción de
+ * claims)
  */
 @Component
 public class JwtTokenProvider {
@@ -55,7 +55,7 @@ public class JwtTokenProvider {
                 .subject(subject)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()), SignatureAlgorithm.HS256)
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .compact();
     }
 

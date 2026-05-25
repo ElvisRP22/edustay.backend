@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ public class HabitacionController {
      * POST /api/habitaciones - Crea una nueva habitación
      */
     @PostMapping
+    @PreAuthorize("hasRole('ARRENDADOR')")
     @Operation(summary = "Crear habitación", description = "Crea una nueva habitación para el arrendador autenticado")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Habitación creada exitosamente",
@@ -51,6 +53,7 @@ public class HabitacionController {
             throw new RuntimeException(e.getMessage());
         }
     }
+
 
     /**
      * GET /api/habitaciones - Obtiene todas las habitaciones
@@ -110,6 +113,7 @@ public class HabitacionController {
             @ApiResponse(responseCode = "404", description = "Habitación no encontrada"),
             @ApiResponse(responseCode = "500", description = "Error del servidor")
     })
+    @PreAuthorize("hasRole('ARRENDADOR')")
     public ResponseEntity<HabitacionResponse> actualizarHabitacion(
             @PathVariable Long id,
             @Valid @RequestBody HabitacionRequest request,
@@ -134,6 +138,7 @@ public class HabitacionController {
             @ApiResponse(responseCode = "404", description = "Habitación no encontrada"),
             @ApiResponse(responseCode = "500", description = "Error del servidor")
     })
+    @PreAuthorize("hasRole('ARRENDADOR')")
     public ResponseEntity<Void> eliminarHabitacion(
             @PathVariable Long id,
             @RequestAttribute("userId") Long userId) {

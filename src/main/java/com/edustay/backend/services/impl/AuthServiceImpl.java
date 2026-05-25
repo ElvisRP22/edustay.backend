@@ -14,7 +14,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +31,8 @@ import java.util.UUID;
 @Service
 @Transactional
 public class AuthServiceImpl implements AuthService {
+
+
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -212,7 +214,7 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("La configuración app.google.client-id es obligatoria para validar Google Sign-In");
         }
 
-        return new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance())
+        return new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
                 .setAudience(Collections.singletonList(googleClientId))
                 .build();
     }
