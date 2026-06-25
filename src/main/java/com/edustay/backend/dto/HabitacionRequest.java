@@ -30,8 +30,9 @@ public class HabitacionRequest {
     @NotNull(message = "La longitud es obligatoria")
     private Double longitud;
 
-    private Set<Long> servicioIds;
-    private Set<Long> reglaIds;
+    private java.util.Set<Long> servicioIds;
+    private java.util.Set<Long> reglaIds;
+    private java.util.List<String> fotos;
 
     // Constructores
     public HabitacionRequest() {}
@@ -76,7 +77,15 @@ public class HabitacionRequest {
         return reglaIds;
     }
 
-    public void setReglaIds(Set<Long> reglaIds) {
+    public void setReglaIds(java.util.Set<Long> reglaIds) {
         this.reglaIds = reglaIds;
+    }
+
+    public java.util.List<String> getFotos() {
+        return fotos;
+    }
+
+    public void setFotos(java.util.List<String> fotos) {
+        this.fotos = fotos;
     }
 }

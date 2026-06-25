@@ -22,8 +22,9 @@ public class HabitacionResponse {
     private LocalDateTime fechaPublicacion;
     private Long arrendadorId;
     private String arrendadorNombre;
-    private Set<ServicioResponse> servicios;
-    private Set<ReglaResponse> reglas;
+    private java.util.Set<ServicioResponse> servicios;
+    private java.util.Set<ReglaResponse> reglas;
+    private java.util.List<String> fotos;
 
     // Constructores
     public HabitacionResponse() {}
@@ -107,5 +108,13 @@ public class HabitacionResponse {
 
     public void setDistanciaKm(Double distanciaKm) {
         this.distanciaKm = distanciaKm;
+    }
+
+    public java.util.List<String> getFotos() {
+        return fotos;
+    }
+
+    public void setFotos(java.util.List<String> fotos) {
+        this.fotos = fotos;
     }
 }

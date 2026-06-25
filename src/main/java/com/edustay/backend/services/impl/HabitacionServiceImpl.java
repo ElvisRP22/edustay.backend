@@ -77,6 +77,8 @@ public class HabitacionServiceImpl implements HabitacionService {
         
         habitacion.setEstado(RoomStatus.DISPONIBLE);
 
+        guardarFotos(habitacion, request.getFotos());
+
         Habitacion guardada = habitacionRepository.save(habitacion);
         return convertirAResponse(guardada);
     }
@@ -131,6 +133,8 @@ public class HabitacionServiceImpl implements HabitacionService {
         // Recalcular distancia
         Integer distanciaMinutos = calcularDistanciaUtpMinutos(request.getLatitud(), request.getLongitud());
         habitacion.setDistanciaUtpMinutos(distanciaMinutos);
+
+        guardarFotos(habitacion, request.getFotos());
 
         Habitacion actualizada = habitacionRepository.save(habitacion);
         return convertirAResponse(actualizada);
@@ -198,7 +202,7 @@ public class HabitacionServiceImpl implements HabitacionService {
             .map(regla -> new ReglaResponse(regla.getId(), regla.getDescripcion()))
             .collect(Collectors.toSet());
 
-        return new HabitacionResponse(
+        HabitacionResponse response = new HabitacionResponse(
                 habitacion.getId(),
                 habitacion.getTitulo(),
                 habitacion.getDescripcion(),
@@ -214,6 +218,16 @@ public class HabitacionServiceImpl implements HabitacionService {
                 servicios,
                 reglas
         );
+
+        if (habitacion.getFotos() != null) {
+            response.setFotos(habitacion.getFotos().stream()
+                .map(com.edustay.backend.models.FotoHabitacion::getUrl)
+                .collect(Collectors.toList()));
+        } else {
+            response.setFotos(Collections.emptyList());
+        }
+
+        return response;
     }
 
     private Set<Servicio> cargarServicios(Set<Long> servicioIds) {
@@ -280,5 +294,27 @@ public class HabitacionServiceImpl implements HabitacionService {
                     return Long.compare(b.getId(), a.getId());
                 })
                 .collect(Collectors.toList());
+    }
+
+    private void guardarFotos(Habitacion habitacion, java.util.List<String> urls) {
+        if (habitacion.getFotos() == null) {
+            habitacion.setFotos(new java.util.ArrayList<>());
+        } else {
+            habitacion.getFotos().clear();
+        }
+
+        if (urls != null) {
+            boolean esPrimera = true;
+            for (String url : urls) {
+                if (url != null && !url.isBlank()) {
+                    com.edustay.backend.models.FotoHabitacion foto = new com.edustay.backend.models.FotoHabitacion();
+                    foto.setUrl(url.trim());
+                    foto.setEsPrincipal(esPrimera);
+                    foto.setHabitacion(habitacion);
+                    habitacion.getFotos().add(foto);
+                    esPrimera = false;
+                }
+            }
+        }
     }
 }

@@ -190,6 +190,13 @@ public class DataSeeder implements CommandLineRunner {
             hab1.setEstado(RoomStatus.DISPONIBLE);
             hab1.setServicios(new java.util.HashSet<>(todosLosServicios.subList(0, Math.min(4, todosLosServicios.size()))));
             hab1.setReglas(new java.util.HashSet<>(todasLasReglas.subList(0, Math.min(3, todasLasReglas.size()))));
+            
+            com.edustay.backend.models.FotoHabitacion foto1 = new com.edustay.backend.models.FotoHabitacion();
+            foto1.setUrl("https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80");
+            foto1.setEsPrincipal(true);
+            foto1.setHabitacion(hab1);
+            hab1.setFotos(new java.util.ArrayList<>(java.util.Arrays.asList(foto1)));
+            
             habitacionRepository.save(hab1);
             System.out.println("✓ Habitación 1 creada: Moderna en el Centro - S/. 450");
             
@@ -206,6 +213,13 @@ public class DataSeeder implements CommandLineRunner {
             hab2.setEstado(RoomStatus.DISPONIBLE);
             hab2.setServicios(new java.util.HashSet<>(todosLosServicios.subList(0, Math.min(5, todosLosServicios.size()))));
             hab2.setReglas(new java.util.HashSet<>(todasLasReglas));
+            
+            com.edustay.backend.models.FotoHabitacion foto2 = new com.edustay.backend.models.FotoHabitacion();
+            foto2.setUrl("https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=600&q=80");
+            foto2.setEsPrincipal(true);
+            foto2.setHabitacion(hab2);
+            hab2.setFotos(new java.util.ArrayList<>(java.util.Arrays.asList(foto2)));
+            
             habitacionRepository.save(hab2);
             System.out.println("✓ Habitación 2 creada: Cerca de UTP - S/. 380");
             
@@ -222,6 +236,13 @@ public class DataSeeder implements CommandLineRunner {
             hab3.setEstado(RoomStatus.DISPONIBLE);
             hab3.setServicios(new java.util.HashSet<>(todosLosServicios));
             hab3.setReglas(new java.util.HashSet<>(todasLasReglas.subList(0, Math.min(2, todasLasReglas.size()))));
+            
+            com.edustay.backend.models.FotoHabitacion foto3 = new com.edustay.backend.models.FotoHabitacion();
+            foto3.setUrl("https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80");
+            foto3.setEsPrincipal(true);
+            foto3.setHabitacion(hab3);
+            hab3.setFotos(new java.util.ArrayList<>(java.util.Arrays.asList(foto3)));
+            
             habitacionRepository.save(hab3);
             System.out.println("✓ Habitación 3 creada: Suite Premium - S/. 650");
             
@@ -238,6 +259,13 @@ public class DataSeeder implements CommandLineRunner {
             hab4.setEstado(RoomStatus.DISPONIBLE);
             hab4.setServicios(new java.util.HashSet<>(todosLosServicios.subList(0, Math.min(3, todosLosServicios.size()))));
             hab4.setReglas(new java.util.HashSet<>(todasLasReglas));
+            
+            com.edustay.backend.models.FotoHabitacion foto4 = new com.edustay.backend.models.FotoHabitacion();
+            foto4.setUrl("https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=600&q=80");
+            foto4.setEsPrincipal(true);
+            foto4.setHabitacion(hab4);
+            hab4.setFotos(new java.util.ArrayList<>(java.util.Arrays.asList(foto4)));
+            
             habitacionRepository.save(hab4);
             System.out.println("✓ Habitación 4 creada: Económica - S/. 300");
             
