@@ -1,0 +1,21 @@
+# fly.toml app configuration file for edustay-backend
+
+app = "edustay-backend"
+primary_region = "lim"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SPRING_PROFILES_ACTIVE = "prod"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_start_machines = true
+  auto_stop_machines = true
+
+[mounts]
+  source = "edustay_uploads"
+  destination = "/app/uploads"

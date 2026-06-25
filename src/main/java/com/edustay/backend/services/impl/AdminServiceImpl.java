@@ -107,4 +107,60 @@ public class AdminServiceImpl implements AdminService {
                 .filter(u -> u.getRol().name().equals("ARRENDADOR"))
                 .count();
     }
+
+    @Override
+    public List<com.edustay.backend.dto.UsuarioAdminResponse> obtenerTodosUsuariosParaAdmin() {
+        return usuarioRepository.findAll().stream()
+                .map(u -> new com.edustay.backend.dto.UsuarioAdminResponse(
+                        u.getId(),
+                        u.getNombre(),
+                        u.getApellido(),
+                        u.getEmail(),
+                        u.getTelefono(),
+                        u.getDni(),
+                        u.getRol(),
+                        u.isEmailVerificado(),
+                        u.getIdentidadVerificada(),
+                        u.getFechaRegistro()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public com.edustay.backend.dto.UsuarioAdminResponse cambiarRolDeUsuario(Long id, String nuevoRolStr) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+
+        if (nuevoRolStr == null || nuevoRolStr.isBlank()) {
+            throw new IllegalArgumentException("El rol es obligatorio");
+        }
+
+        try {
+            com.edustay.backend.models.enums.UserRole nuevoRol = com.edustay.backend.models.enums.UserRole.valueOf(nuevoRolStr.toUpperCase());
+            usuario.setRol(nuevoRol);
+            usuarioRepository.save(usuario);
+
+            return new com.edustay.backend.dto.UsuarioAdminResponse(
+                    usuario.getId(),
+                    usuario.getNombre(),
+                    usuario.getApellido(),
+                    usuario.getEmail(),
+                    usuario.getTelefono(),
+                    usuario.getDni(),
+                    usuario.getRol(),
+                    usuario.isEmailVerificado(),
+                    usuario.getIdentidadVerificada(),
+                    usuario.getFechaRegistro()
+            );
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Rol inválido. Roles permitidos: ESTUDIANTE, ARRENDADOR, ADMIN");
+        }
+    }
+
+    @Override
+    public void eliminarUsuarioPermanente(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+        usuarioRepository.delete(usuario);
+    }
 }

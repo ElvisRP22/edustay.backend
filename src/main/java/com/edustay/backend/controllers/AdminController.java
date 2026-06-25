@@ -1,9 +1,7 @@
 package com.edustay.backend.controllers;
 
 import com.edustay.backend.dto.UsuarioAdminResponse;
-import com.edustay.backend.models.Usuario;
-import com.edustay.backend.models.enums.UserRole;
-import com.edustay.backend.repositories.UsuarioRepository;
+import com.edustay.backend.services.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Controlador para operaciones de administración de la plataforma.
@@ -28,7 +25,7 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private AdminService adminService;
 
     private boolean esAdmin(String userRole) {
         return "ADMIN".equalsIgnoreCase(userRole);
@@ -44,21 +41,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado: se requiere rol ADMIN");
         }
 
-        List<UsuarioAdminResponse> response = usuarioRepository.findAll().stream()
-                .map(u -> new UsuarioAdminResponse(
-                        u.getId(),
-                        u.getNombre(),
-                        u.getApellido(),
-                        u.getEmail(),
-                        u.getTelefono(),
-                        u.getDni(),
-                        u.getRol(),
-                        u.isEmailVerificado(),
-                        u.getIdentidadVerificada(),
-                        u.getFechaRegistro()
-                ))
-                .collect(Collectors.toList());
-
+        List<UsuarioAdminResponse> response = adminService.obtenerTodosUsuariosParaAdmin();
         return ResponseEntity.ok(response);
     }
 
@@ -76,35 +59,18 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado: se requiere rol ADMIN");
         }
 
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
-
         String nuevoRolStr = body.get("rol");
         if (nuevoRolStr == null || nuevoRolStr.isBlank()) {
             return ResponseEntity.badRequest().body("El rol es obligatorio");
         }
 
         try {
-            UserRole nuevoRol = UserRole.valueOf(nuevoRolStr.toUpperCase());
-            usuario.setRol(nuevoRol);
-            usuarioRepository.save(usuario);
-
-            UsuarioAdminResponse res = new UsuarioAdminResponse(
-                    usuario.getId(),
-                    usuario.getNombre(),
-                    usuario.getApellido(),
-                    usuario.getEmail(),
-                    usuario.getTelefono(),
-                    usuario.getDni(),
-                    usuario.getRol(),
-                    usuario.isEmailVerificado(),
-                    usuario.getIdentidadVerificada(),
-                    usuario.getFechaRegistro()
-            );
-
+            UsuarioAdminResponse res = adminService.cambiarRolDeUsuario(id, nuevoRolStr);
             return ResponseEntity.ok(res);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Rol inválido. Roles permitidos: ESTUDIANTE, ARRENDADOR, ADMIN");
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
@@ -121,11 +87,12 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado: se requiere rol ADMIN");
         }
 
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
-
-        usuarioRepository.delete(usuario);
-        return ResponseEntity.ok(Map.of("message", "Usuario eliminado de forma permanente"));
+        try {
+            adminService.eliminarUsuarioPermanente(id);
+            return ResponseEntity.ok(Map.of("message", "Usuario eliminado de forma permanente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 }
 

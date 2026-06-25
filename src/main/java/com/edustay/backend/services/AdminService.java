@@ -20,4 +20,10 @@ public interface AdminService {
     Long totalClientes();
 
     Long totalArrendadores();
+
+    List<com.edustay.backend.dto.UsuarioAdminResponse> obtenerTodosUsuariosParaAdmin();
+
+    com.edustay.backend.dto.UsuarioAdminResponse cambiarRolDeUsuario(Long id, String nuevoRolStr);
+
+    void eliminarUsuarioPermanente(Long id);
 }

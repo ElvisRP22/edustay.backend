@@ -30,6 +30,9 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins}")
+    private String[] allowedOrigins;
+
     /**
      * Encoder para contraseñas usando BCrypt
      */
@@ -44,7 +47,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
@@ -90,6 +93,9 @@ public class SecurityConfig {
 
                         // Permitir acceso público a los archivos subidos (para ver contratos y documentos de identidad)
                         .requestMatchers("/uploads/**").permitAll()
+
+                        // Permitir acceso público a endpoints de Actuator para monitoreo
+                        .requestMatchers("/actuator/**").permitAll()
 
                         // El resto de requests requieren autenticación
                         .anyRequest().authenticated()
