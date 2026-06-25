@@ -1,7 +1,7 @@
 # fly.toml app configuration file for edustay-backend
 
 app = "edustay-backend"
-primary_region = "lim"
+primary_region = "gru"
 
 [build]
   dockerfile = "Dockerfile"
