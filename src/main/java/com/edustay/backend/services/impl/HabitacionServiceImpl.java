@@ -9,6 +9,7 @@ import com.edustay.backend.models.Regla;
 import com.edustay.backend.models.Servicio;
 import com.edustay.backend.models.Usuario;
 import com.edustay.backend.models.enums.RoomStatus;
+import com.edustay.backend.models.enums.VerificationStatus;
 import com.edustay.backend.repositories.ReglaRepository;
 import com.edustay.backend.repositories.HabitacionRepository;
 import com.edustay.backend.repositories.ServicioRepository;
@@ -54,6 +55,10 @@ public class HabitacionServiceImpl implements HabitacionService {
     public HabitacionResponse crearHabitacion(HabitacionRequest request, Long arrendadorId) {
         Usuario arrendador = usuarioRepository.findById(arrendadorId)
                 .orElseThrow(() -> new RuntimeException("Arrendador no encontrado"));
+
+        if (arrendador.getIdentidadVerificada() != VerificationStatus.VERIFICADO) {
+            throw new RuntimeException("Tu cuenta aún no ha sido verificada. Debes subir tus documentos y esperar a que sean aprobados por un administrador para poder publicar habitaciones.");
+        }
 
         Habitacion habitacion = new Habitacion();
         habitacion.setArrendador(arrendador);
@@ -108,6 +113,11 @@ public class HabitacionServiceImpl implements HabitacionService {
     public HabitacionResponse actualizarHabitacion(Long id, HabitacionRequest request, Long arrendadorId) {
         Habitacion habitacion = habitacionRepository.findByIdAndArrendadorId(id, arrendadorId)
                 .orElseThrow(() -> new RuntimeException("Habitación no encontrada o no pertenece al arrendador"));
+
+        Usuario arrendador = habitacion.getArrendador();
+        if (arrendador != null && arrendador.getIdentidadVerificada() != VerificationStatus.VERIFICADO) {
+            throw new RuntimeException("Tu cuenta aún no ha sido verificada. Debes subir tus documentos y esperar a que sean aprobados por un administrador para poder modificar habitaciones.");
+        }
 
         habitacion.setTitulo(request.getTitulo());
         habitacion.setDescripcion(request.getDescripcion());
@@ -228,5 +238,47 @@ public class HabitacionServiceImpl implements HabitacionService {
             throw new RuntimeException("Una o más reglas no existen");
         }
         return new HashSet<>(reglas);
+    }
+
+    @Override
+    public List<HabitacionResponse> buscarHabitaciones(Double lat, Double lon, Double radioKm, Double maxPrecio, String query, Boolean soloDisponibles) {
+        List<Habitacion> todas = (soloDisponibles != null && soloDisponibles)
+                ? habitacionRepository.findByEstado(RoomStatus.DISPONIBLE)
+                : habitacionRepository.findAll();
+
+        double finalRadioKm = radioKm != null ? radioKm : 5.0;
+        String lowercaseQuery = query != null ? query.trim().toLowerCase() : "";
+
+        return todas.stream()
+                // Filtrar por precio si es provisto
+                .filter(h -> maxPrecio == null || h.getPrecio() <= maxPrecio)
+                // Filtrar por query si es provisto (busca en título y dirección)
+                .filter(h -> lowercaseQuery.isEmpty() 
+                        || h.getTitulo().toLowerCase().contains(lowercaseQuery) 
+                        || h.getDireccion().toLowerCase().contains(lowercaseQuery))
+                // Calcular distancia si lat/lon son provistos
+                .map(h -> {
+                    HabitacionResponse res = convertirAResponse(h);
+                    if (lat != null && lon != null && h.getLatitud() != null && h.getLongitud() != null) {
+                        double dist = calcularDistanciaHaversine(lat, lon, h.getLatitud(), h.getLongitud());
+                        res.setDistanciaKm(Math.round(dist * 100.0) / 100.0); // Redondear a 2 decimales
+                    }
+                    return res;
+                })
+                // Filtrar por radio si se calculó distancia y si se especificó ubicación
+                .filter(res -> {
+                    if (lat != null && lon != null) {
+                        return res.getDistanciaKm() != null && res.getDistanciaKm() <= finalRadioKm;
+                    }
+                    return true;
+                })
+                // Ordenar por distancia (si lat/lon están presentes) o por ID descendente
+                .sorted((a, b) -> {
+                    if (lat != null && lon != null && a.getDistanciaKm() != null && b.getDistanciaKm() != null) {
+                        return Double.compare(a.getDistanciaKm(), b.getDistanciaKm());
+                    }
+                    return Long.compare(b.getId(), a.getId());
+                })
+                .collect(Collectors.toList());
     }
 }

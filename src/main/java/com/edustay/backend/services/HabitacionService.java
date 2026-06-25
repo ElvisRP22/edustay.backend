@@ -44,4 +44,9 @@ public interface HabitacionService {
      * Elimina una habitación
      */
     void eliminarHabitacion(Long id, Long arrendadorId);
+
+    /**
+     * Busca habitaciones por geolocalización, precio, término de búsqueda y estado
+     */
+    List<HabitacionResponse> buscarHabitaciones(Double lat, Double lon, Double radioKm, Double maxPrecio, String query, Boolean soloDisponibles);
 }

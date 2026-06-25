@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import java.util.Map;
+
 /**
  * Controlador para la gestión de reportes de habitaciones
  */
@@ -75,5 +77,33 @@ public class ReporteController {
     @ApiResponse(responseCode = "200", description = "Lista de reportes de la habitación")
     public ResponseEntity<List<ReporteResponse>> obtenerPorHabitacion(@PathVariable Long habitacionId) {
         return ResponseEntity.ok(reporteService.obtenerPorHabitacion(habitacionId));
+    }
+
+    /**
+     * PATCH /api/reportes/{id}/estado - Cambia el estado de un reporte (admin)
+     */
+    @PatchMapping("/{id}/estado")
+    @Operation(summary = "Actualizar estado de reporte", description = "Cambia el estado de un reporte a ABIERTO, EN_REVISION, RESUELTO o DESESTIMADO (requiere rol ADMIN)")
+    public ResponseEntity<?> actualizarEstado(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            @RequestAttribute("userRole") String userRole) {
+        
+        if (!"ADMIN".equalsIgnoreCase(userRole)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado: se requiere rol ADMIN");
+        }
+
+        String nuevoEstadoStr = body.get("estado");
+        if (nuevoEstadoStr == null || nuevoEstadoStr.isBlank()) {
+            return ResponseEntity.badRequest().body("El estado es obligatorio");
+        }
+
+        try {
+            com.edustay.backend.models.enums.ReportStatus nuevoEstado = com.edustay.backend.models.enums.ReportStatus.valueOf(nuevoEstadoStr.toUpperCase());
+            ReporteResponse response = reporteService.actualizarEstado(id, nuevoEstado);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Estado inválido. Valores permitidos: ABIERTO, EN_REVISION, RESUELTO, DESESTIMADO");
+        }
     }
 }

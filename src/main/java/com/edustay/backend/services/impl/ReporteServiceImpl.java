@@ -38,7 +38,8 @@ public class ReporteServiceImpl implements ReporteService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + emisorId));
 
         Habitacion habitacion = habitacionRepository.findById(request.getHabitacionId())
-                .orElseThrow(() -> new RuntimeException("Habitación no encontrada con id: " + request.getHabitacionId()));
+                .orElseThrow(
+                        () -> new RuntimeException("Habitación no encontrada con id: " + request.getHabitacionId()));
 
         Reporte reporte = new Reporte();
         reporte.setEmisor(emisor);
@@ -84,7 +85,15 @@ public class ReporteServiceImpl implements ReporteService {
                 r.getMotivo(),
                 r.getDescripcion(),
                 r.getEstado(),
-                r.getFecha()
-        );
+                r.getFecha());
+    }
+
+    @Override
+    public ReporteResponse actualizarEstado(Long id, com.edustay.backend.models.enums.ReportStatus nuevoEstado) {
+        Reporte reporte = reporteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reporte no encontrado con id: " + id));
+        reporte.setEstado(nuevoEstado);
+        reporteRepository.save(reporte);
+        return convertirAResponse(reporte);
     }
 }

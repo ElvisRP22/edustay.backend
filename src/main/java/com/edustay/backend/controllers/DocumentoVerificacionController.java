@@ -13,8 +13,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import java.util.List;
 
@@ -48,6 +58,58 @@ public class DocumentoVerificacionController {
             @RequestAttribute("userId") Long userId) {
         VerificacionResponse response = documentoVerificacionService.subirDocumento(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * POST /api/documentos/upload - Sube un archivo físico al servidor y retorna su URL
+     */
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Subir archivo físico", description = "Sube un archivo de documento al servidor local y retorna su URL")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Archivo subido exitosamente",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class))),
+            @ApiResponse(responseCode = "400", description = "Archivo vacío o inválido"),
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor al guardar el archivo")
+    })
+    public ResponseEntity<Map<String, String>> subirArchivoFisico(
+            @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new RuntimeException("El archivo está vacío");
+        }
+
+        try {
+            // Asegurar que el directorio de subidas exista
+            Path uploadDir = Paths.get("./uploads");
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+
+            // Generar un nombre único para evitar colisiones
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String newFilename = UUID.randomUUID().toString() + extension;
+
+            // Guardar el archivo en el sistema de archivos
+            Path destination = uploadDir.resolve(newFilename);
+            Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
+
+            // Construir la URL completa usando el request actual
+            String fileUrl = org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/")
+                    .path(newFilename)
+                    .toUriString();
+
+            Map<String, String> response = new HashMap<>();
+            response.put("archivoUrl", fileUrl);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudo guardar el archivo: " + e.getMessage(), e);
+        }
     }
 
     /**

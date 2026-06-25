@@ -7,6 +7,7 @@ import com.edustay.backend.models.Usuario;
 import com.edustay.backend.models.enums.VerificationStatus;
 import com.edustay.backend.repositories.DocumentoVerificacionRepository;
 import com.edustay.backend.repositories.UsuarioRepository;
+import com.edustay.backend.services.EmailService;
 import com.edustay.backend.services.VerificacionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,9 @@ public class VerificacionServiceImpl implements VerificacionService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     @Override
     @Transactional(readOnly = true)
@@ -77,6 +81,23 @@ public class VerificacionServiceImpl implements VerificacionService {
 
         // Actualizar identidad_verificada del usuario
         actualizarIdentidadUsuario(documento.getUsuario(), nuevoEstado);
+
+        // Enviar correo de notificación del resultado al usuario
+        try {
+            Usuario usuario = documento.getUsuario();
+            String emailUsuario = usuario.getEmail();
+            String nombreUsuario = usuario.getNombre() + " " + usuario.getApellido();
+            String tipoDoc = documento.getTipo().name();
+            String estadoDoc = nuevoEstado.name();
+            String comentarioAdmin = request.getComentarioAdmin();
+            String estadoGlobal = usuario.getIdentidadVerificada().name();
+
+            emailService.enviarResultadoVerificacionDocumento(
+                    emailUsuario, nombreUsuario, tipoDoc, estadoDoc, comentarioAdmin, estadoGlobal
+            );
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar correo de notificación de verificación: " + e.getMessage());
+        }
 
         return convertirAResponse(documento);
     }

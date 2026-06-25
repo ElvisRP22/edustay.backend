@@ -24,6 +24,9 @@ public class AlquilerRequest {
     @Schema(description = "Fecha de inicio del alquiler (opcional, se usa la fecha actual si no se proporciona)")
     private LocalDateTime fechaInicio;
 
+    @Schema(description = "URL pública del contrato de alquiler en formato PDF", example = "https://storage.edustay.com/contratos/c1.pdf")
+    private String contratoUrl;
+
     public AlquilerRequest() {}
 
     public Long getHabitacionId() { return habitacionId; }
@@ -34,4 +37,7 @@ public class AlquilerRequest {
 
     public LocalDateTime getFechaInicio() { return fechaInicio; }
     public void setFechaInicio(LocalDateTime fechaInicio) { this.fechaInicio = fechaInicio; }
+
+    public String getContratoUrl() { return contratoUrl; }
+    public void setContratoUrl(String contratoUrl) { this.contratoUrl = contratoUrl; }
 }

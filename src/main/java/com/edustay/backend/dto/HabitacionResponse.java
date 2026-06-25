@@ -17,6 +17,7 @@ public class HabitacionResponse {
     private Double latitud;
     private Double longitud;
     private Integer distanciaUtpMinutos;
+    private Double distanciaKm;
     private RoomStatus estado;
     private LocalDateTime fechaPublicacion;
     private Long arrendadorId;
@@ -98,5 +99,13 @@ public class HabitacionResponse {
 
     public void setReglas(Set<ReglaResponse> reglas) {
         this.reglas = reglas;
+    }
+
+    public Double getDistanciaKm() {
+        return distanciaKm;
+    }
+
+    public void setDistanciaKm(Double distanciaKm) {
+        this.distanciaKm = distanciaKm;
     }
 }

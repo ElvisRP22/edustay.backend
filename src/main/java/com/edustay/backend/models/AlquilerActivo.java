@@ -42,6 +42,8 @@ public class AlquilerActivo {
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaRegistro;
 
+    private String contratoUrl;
+
     public AlquilerActivo() {
     }
 
@@ -74,4 +76,7 @@ public class AlquilerActivo {
     public void setMontoPactado(Double montoPactado) { this.montoPactado = montoPactado; }
 
     public LocalDateTime getFechaRegistro() { return fechaRegistro; }
+
+    public String getContratoUrl() { return contratoUrl; }
+    public void setContratoUrl(String contratoUrl) { this.contratoUrl = contratoUrl; }
 }

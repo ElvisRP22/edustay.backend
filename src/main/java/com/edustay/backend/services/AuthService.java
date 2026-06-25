@@ -35,4 +35,14 @@ public interface AuthService {
      * Verifica si un email ya está registrado
      */
     boolean existeEmail(String email);
+
+    /**
+     * Verifica el email del usuario usando un código OTP
+     */
+    void verifyEmail(String email, String codigo);
+
+    /**
+     * Genera y reenvía un nuevo código OTP al correo del usuario
+     */
+    void resendOtp(String email);
 }

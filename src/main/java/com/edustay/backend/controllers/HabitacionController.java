@@ -56,6 +56,24 @@ public class HabitacionController {
 
 
     /**
+     * GET /api/habitaciones/buscar - Busca habitaciones por geolocalización, precio, término y estado
+     */
+    @GetMapping("/buscar")
+    @Operation(summary = "Buscar habitaciones", description = "Filtra y busca habitaciones por geolocalización (lat, lon, radioKm), precio, query y estado")
+    @ApiResponse(responseCode = "200", description = "Lista de habitaciones que cumplen los criterios")
+    public ResponseEntity<List<HabitacionResponse>> buscar(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lon,
+            @RequestParam(required = false) Double radioKm,
+            @RequestParam(required = false) Double maxPrecio,
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "true") Boolean soloDisponibles) {
+        List<HabitacionResponse> habitaciones = habitacionService.buscarHabitaciones(lat, lon, radioKm, maxPrecio, query, soloDisponibles);
+        return ResponseEntity.ok(habitaciones);
+    }
+
+
+    /**
      * GET /api/habitaciones - Obtiene todas las habitaciones
      */
     @GetMapping

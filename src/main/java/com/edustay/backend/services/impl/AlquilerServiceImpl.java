@@ -6,10 +6,12 @@ import com.edustay.backend.models.AlquilerActivo;
 import com.edustay.backend.models.Habitacion;
 import com.edustay.backend.models.Usuario;
 import com.edustay.backend.models.enums.RoomStatus;
+import com.edustay.backend.models.enums.VerificationStatus;
 import com.edustay.backend.repositories.AlquilerActivoRepository;
 import com.edustay.backend.repositories.HabitacionRepository;
 import com.edustay.backend.repositories.UsuarioRepository;
 import com.edustay.backend.services.AlquilerService;
+import com.edustay.backend.services.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,9 @@ public class AlquilerServiceImpl implements AlquilerService {
     @Autowired
     private HabitacionRepository habitacionRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     @Override
     public AlquilerResponse crearAlquiler(Long estudianteId, AlquilerRequest request) {
         // Validar que la habitación no esté ya alquilada
@@ -50,6 +55,11 @@ public class AlquilerServiceImpl implements AlquilerService {
         Usuario estudiante = usuarioRepository.findById(estudianteId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + estudianteId));
 
+        // Verificar que el estudiante esté verificado
+        if (estudiante.getIdentidadVerificada() != VerificationStatus.VERIFICADO) {
+            throw new RuntimeException("Tu cuenta aún no ha sido verificada. Debes subir tus documentos y esperar a que sean aprobados por un administrador para poder realizar un alquiler.");
+        }
+
         AlquilerActivo alquiler = new AlquilerActivo();
         alquiler.setHabitacion(habitacion);
         alquiler.setEstudiante(estudiante);
@@ -57,12 +67,38 @@ public class AlquilerServiceImpl implements AlquilerService {
         if (request.getFechaInicio() != null) {
             alquiler.setFechaInicio(request.getFechaInicio());
         }
+        if (request.getContratoUrl() != null) {
+            alquiler.setContratoUrl(request.getContratoUrl());
+        }
 
         // Marcar la habitación como ocupada
         habitacion.setEstado(RoomStatus.OCUPADO);
         habitacionRepository.save(habitacion);
 
         AlquilerActivo guardado = alquilerActivoRepository.save(alquiler);
+
+        // Enviar correos de confirmación a estudiante y arrendador
+        try {
+            Usuario arr = habitacion.getArrendador();
+            String emailEst = estudiante.getEmail();
+            String nombreEst = estudiante.getNombre() + " " + estudiante.getApellido();
+            String emailArr = arr.getEmail();
+            String nombreArr = arr.getNombre() + " " + arr.getApellido();
+            String tituloHab = habitacion.getTitulo();
+            String direccionHab = habitacion.getDireccion();
+            Double monto = alquiler.getMontoPactado();
+            String urlContrato = alquiler.getContratoUrl();
+
+            emailService.enviarConfirmacionAlquilerEstudiante(
+                    emailEst, nombreEst, nombreArr, tituloHab, direccionHab, monto, urlContrato
+            );
+            emailService.enviarConfirmacionAlquilerArrendador(
+                    emailArr, nombreArr, nombreEst, tituloHab, direccionHab, monto, urlContrato
+            );
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar correos de confirmación de alquiler: " + e.getMessage());
+        }
+
         return convertirAResponse(guardado);
     }
 
@@ -125,7 +161,7 @@ public class AlquilerServiceImpl implements AlquilerService {
         Habitacion h = a.getHabitacion();
         Usuario est = a.getEstudiante();
         Usuario arr = h.getArrendador();
-        return new AlquilerResponse(
+        AlquilerResponse res = new AlquilerResponse(
                 a.getId(),
                 h.getId(),
                 h.getTitulo(),
@@ -138,5 +174,7 @@ public class AlquilerServiceImpl implements AlquilerService {
                 a.getFechaInicio(),
                 a.getFechaRegistro()
         );
+        res.setContratoUrl(a.getContratoUrl());
+        return res;
     }
 }

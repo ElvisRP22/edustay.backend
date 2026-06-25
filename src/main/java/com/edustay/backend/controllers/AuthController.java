@@ -4,6 +4,8 @@ import com.edustay.backend.dto.AuthResponse;
 import com.edustay.backend.dto.GoogleTokenDto;
 import com.edustay.backend.dto.LoginRequest;
 import com.edustay.backend.dto.RegisterRequest;
+import com.edustay.backend.dto.VerifyEmailRequest;
+import com.edustay.backend.dto.ResendOtpRequest;
 import com.edustay.backend.security.JwtTokenProvider;
 import com.edustay.backend.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,12 +20,13 @@ import com.edustay.backend.repositories.UsuarioRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 /**
  * Controller para manejar las operaciones de autenticación (login y registro)
  */
 @RestController
-@RequestMapping({"/api/auth", "/api/v1/auth"})
+@RequestMapping({ "/api/auth", "/api/v1/auth" })
 @Tag(name = "Autenticación", description = "Endpoints para autenticación y registro de usuarios")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AuthController {
@@ -153,5 +156,43 @@ public class AuthController {
         }
 
         return ResponseEntity.ok("Token válido");
+    }
+
+    /**
+     * Endpoint para verificar el email de un usuario usando código OTP
+     */
+    @PostMapping("/verify-email")
+    @Operation(summary = "Verificar email", description = "Valida el código OTP enviado al correo del usuario")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Email verificado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Código inválido o expirado"),
+            @ApiResponse(responseCode = "500", description = "Error del servidor")
+    })
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        try {
+            authService.verifyEmail(request.getEmail(), request.getCodigo());
+            return ResponseEntity.ok(Map.of("message", "Correo verificado exitosamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint para reenviar el código OTP de verificación
+     */
+    @PostMapping("/resend-otp")
+    @Operation(summary = "Reenviar OTP", description = "Invalida códigos OTP anteriores y envía uno nuevo")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "OTP reenviado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Error al reenviar OTP"),
+            @ApiResponse(responseCode = "500", description = "Error del servidor")
+    })
+    public ResponseEntity<?> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
+        try {
+            authService.resendOtp(request.getEmail());
+            return ResponseEntity.ok(Map.of("message", "Código de verificación reenviado exitosamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
     }
 }

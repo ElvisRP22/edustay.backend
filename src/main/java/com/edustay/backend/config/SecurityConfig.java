@@ -88,6 +88,9 @@ public class SecurityConfig {
                         // Permitir acceso a documentación Scalar/OpenAPI
                         .requestMatchers("/docs", "/v3/api-docs", "/v3/api-docs/**", "/scalar/**").permitAll()
 
+                        // Permitir acceso público a los archivos subidos (para ver contratos y documentos de identidad)
+                        .requestMatchers("/uploads/**").permitAll()
+
                         // El resto de requests requieren autenticación
                         .anyRequest().authenticated()
                 )

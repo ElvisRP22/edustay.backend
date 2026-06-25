@@ -1,7 +1,6 @@
 package com.edustay.backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.time.LocalDateTime;
 
 /**
@@ -21,13 +20,13 @@ public class AlquilerResponse {
     private Double montoPactado;
     private LocalDateTime fechaInicio;
     private LocalDateTime fechaRegistro;
+    private String contratoUrl;
 
     public AlquilerResponse() {}
 
     public AlquilerResponse(Long id, Long habitacionId, String habitacionTitulo, String habitacionDireccion,
-                             Long estudianteId, String estudianteNombre,
-                             Long arrendadorId, String arrendadorNombre,
-                             Double montoPactado, LocalDateTime fechaInicio, LocalDateTime fechaRegistro) {
+                            Long estudianteId, String estudianteNombre, Long arrendadorId, String arrendadorNombre,
+                            Double montoPactado, LocalDateTime fechaInicio, LocalDateTime fechaRegistro) {
         this.id = id;
         this.habitacionId = habitacionId;
         this.habitacionTitulo = habitacionTitulo;
@@ -75,4 +74,7 @@ public class AlquilerResponse {
 
     public LocalDateTime getFechaRegistro() { return fechaRegistro; }
     public void setFechaRegistro(LocalDateTime fechaRegistro) { this.fechaRegistro = fechaRegistro; }
+
+    public String getContratoUrl() { return contratoUrl; }
+    public void setContratoUrl(String contratoUrl) { this.contratoUrl = contratoUrl; }
 }

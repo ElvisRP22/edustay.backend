@@ -30,17 +30,20 @@ public class RegisterRequest {
 
     private String telefono;
 
+    private com.edustay.backend.models.enums.UserRole rol;
+
     public RegisterRequest() {
     }
 
     public RegisterRequest(String nombre, String apellido, String email, String password, 
-                          String confirmPassword, String telefono) {
+                          String confirmPassword, String telefono, com.edustay.backend.models.enums.UserRole rol) {
         this.nombre = nombre;
         this.apellido = apellido;
         this.email = email;
         this.password = password;
         this.confirmPassword = confirmPassword;
         this.telefono = telefono;
+        this.rol = rol;
     }
 
     // Getters y Setters
@@ -90,5 +93,13 @@ public class RegisterRequest {
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
+    }
+
+    public com.edustay.backend.models.enums.UserRole getRol() {
+        return rol;
+    }
+
+    public void setRol(com.edustay.backend.models.enums.UserRole rol) {
+        this.rol = rol;
     }
 }

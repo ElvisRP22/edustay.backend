@@ -19,6 +19,8 @@ public interface ReporteService {
     /** Obtiene reportes de una habitación */
     List<ReporteResponse> obtenerPorHabitacion(Long habitacionId);
 
-    /** Obtiene reportes enviados por un usuario */
     List<ReporteResponse> obtenerMisReportes(Long emisorId);
+
+    /** Actualiza el estado de un reporte (admin) */
+    ReporteResponse actualizarEstado(Long id, com.edustay.backend.models.enums.ReportStatus nuevoEstado);
 }

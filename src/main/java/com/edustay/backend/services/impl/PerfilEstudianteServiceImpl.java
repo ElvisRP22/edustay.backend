@@ -75,10 +75,12 @@ public class PerfilEstudianteServiceImpl implements PerfilEstudianteService {
         long documentosVerificados = documentoVerificacionRepository.countByUsuarioIdAndEstado(usuarioId, VerificationStatus.VERIFICADO);
         long documentosRechazados = documentoVerificacionRepository.countByUsuarioIdAndEstado(usuarioId, VerificationStatus.RECHAZADO);
 
-        boolean perfilCompleto = perfil != null
-            && tieneTexto(perfil.getCarrera())
-            && perfil.getCiclo() != null
-            && tieneTexto(perfil.getPreferenciasConvivencia());
+        boolean perfilCompleto = usuario.getRol().name().equals("ARRENDADOR")
+            || usuario.getRol().name().equals("ADMIN")
+            || (perfil != null
+                && tieneTexto(perfil.getCarrera())
+                && perfil.getCiclo() != null
+                && tieneTexto(perfil.getPreferenciasConvivencia()));
 
         String siguientePaso = determinarSiguientePaso(usuario.getIdentidadVerificada(), perfilCompleto, totalDocumentos,
             documentosPendientes, documentosRechazados);
