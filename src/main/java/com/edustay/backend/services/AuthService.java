@@ -45,4 +45,19 @@ public interface AuthService {
      * Genera y reenvía un nuevo código OTP al correo del usuario
      */
     void resendOtp(String email);
+
+    /**
+     * Genera un token de restablecimiento y envía el enlace al usuario.
+     */
+    void forgotPassword(String email);
+
+    /**
+     * Valida si un token de restablecimiento es válido (existe, no usado, no expirado).
+     */
+    boolean validarTokenRestablecimiento(String token);
+
+    /**
+     * Valida el token y actualiza la contraseña del usuario.
+     */
+    void resetPassword(String token, String nuevaPassword);
 }

@@ -6,10 +6,12 @@ import com.edustay.backend.dto.LoginRequest;
 import com.edustay.backend.dto.RegisterRequest;
 import com.edustay.backend.models.Usuario;
 import com.edustay.backend.models.CodigoOtp;
+import com.edustay.backend.models.PasswordResetToken;
 import com.edustay.backend.models.enums.UserRole;
 import com.edustay.backend.models.enums.VerificationStatus;
 import com.edustay.backend.repositories.UsuarioRepository;
 import com.edustay.backend.repositories.CodigoOtpRepository;
+import com.edustay.backend.repositories.PasswordResetTokenRepository;
 import com.edustay.backend.security.JwtTokenProvider;
 import com.edustay.backend.services.AuthService;
 import com.edustay.backend.services.EmailService;
@@ -47,6 +49,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private CodigoOtpRepository codigoOtpRepository;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -350,5 +355,61 @@ public class AuthServiceImpl implements AuthService {
 
         // Enviar el correo electrónico real mediante Resend (con fallback en consola)
         emailService.enviarCodigoOtp(email, newOtpCode);
+    }
+
+    @Override
+    public void forgotPassword(String email) {
+        Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+        if (usuario == null) {
+            System.out.println("⚠️ Solicitud de recuperación para correo no registrado: " + email);
+            return;
+        }
+
+        // Expirar/eliminar tokens anteriores para este usuario
+        passwordResetTokenRepository.deleteByUsuario(usuario);
+
+        // Crear nuevo token
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiracion = LocalDateTime.now().plusMinutes(15);
+        PasswordResetToken resetToken = new PasswordResetToken(usuario, token, expiracion);
+        passwordResetTokenRepository.save(resetToken);
+
+        // Enlace al frontend
+        String enlace = "http://localhost:4200/reset-password?token=" + token;
+        
+        emailService.enviarEnlaceRestablecimiento(email, usuario.getNombre(), enlace);
+    }
+
+    @Override
+    public boolean validarTokenRestablecimiento(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token).orElse(null);
+        if (resetToken == null || resetToken.isUsado()) {
+            return false;
+        }
+        return resetToken.getExpiracion().isAfter(LocalDateTime.now());
+    }
+
+    @Override
+    public void resetPassword(String token, String nuevaPassword) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("El enlace de restablecimiento es inválido o ya ha sido utilizado"));
+
+        if (resetToken.isUsado()) {
+            throw new RuntimeException("El enlace de restablecimiento ya ha sido utilizado");
+        }
+
+        if (resetToken.getExpiracion().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("El enlace de restablecimiento ha expirado");
+        }
+
+        Usuario usuario = resetToken.getUsuario();
+        usuario.setPassword(passwordEncoder.encode(nuevaPassword));
+        usuarioRepository.save(usuario);
+
+        resetToken.setUsado(true);
+        passwordResetTokenRepository.save(resetToken);
     }
 }

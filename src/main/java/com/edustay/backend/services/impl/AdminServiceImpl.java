@@ -2,10 +2,13 @@ package com.edustay.backend.services.impl;
 
 import com.edustay.backend.dto.AdminRequest;
 import com.edustay.backend.dto.AdminResponse;
+import com.edustay.backend.dto.MensajeResponse;
 import com.edustay.backend.models.Admin;
 import com.edustay.backend.models.Usuario;
+import com.edustay.backend.models.Mensaje;
 import com.edustay.backend.repositories.AdminRepository;
 import com.edustay.backend.repositories.UsuarioRepository;
+import com.edustay.backend.repositories.MensajeRepository;
 import com.edustay.backend.services.AdminService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,9 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private AdminRepository adminRepository;
+
+    @Autowired
+    private MensajeRepository mensajeRepository;
 
     @Override
     public List<AdminResponse> obtenerUsuarios() {
@@ -162,5 +168,70 @@ public class AdminServiceImpl implements AdminService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
         usuarioRepository.delete(usuario);
+    }
+
+    @Override
+    public List<MensajeResponse> obtenerMensajesReportados() {
+        return mensajeRepository.findByModeradoTrueOrderByFechaEnvioDesc().stream()
+                .map(m -> new MensajeResponse(
+                        m.getId(),
+                        m.getEmisor().getId(),
+                        m.getEmisor().getNombre() + " " + m.getEmisor().getApellido(),
+                        m.getReceptor().getId(),
+                        m.getReceptor().getNombre() + " " + m.getReceptor().getApellido(),
+                        m.getHabitacion().getId(),
+                        m.getHabitacion().getTitulo(),
+                        m.getContenido(),
+                        m.isLeido(),
+                        m.getFechaEnvio(),
+                        m.isModerado(),
+                        m.getCategoriaModeracion(),
+                        m.isBloqueado(),
+                        m.getEstadoModeracion()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void desestimarReporteMensaje(Long id) {
+        Mensaje mensaje = mensajeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado con id: " + id));
+        mensaje.setModerado(false);
+        mensaje.setEstadoModeracion("DESESTIMADO");
+        mensajeRepository.save(mensaje);
+    }
+
+    @Override
+    public void eliminarMensajeModerado(Long id) {
+        Mensaje mensaje = mensajeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado con id: " + id));
+        // Reemplazar contenido ofensivo por texto informativo (eliminación lógica visible en el chat)
+        mensaje.setContenido("Este mensaje fue eliminado por infringir las normas de la comunidad.");
+        mensaje.setModerado(false); // Quitar de reportes pendientes
+        mensaje.setCategoriaModeracion("ELIMINADO");
+        mensaje.setEstadoModeracion("ELIMINADO");
+        mensajeRepository.save(mensaje);
+    }
+
+    @Override
+    public List<MensajeResponse> obtenerHistorialModeracion() {
+        return mensajeRepository.findByEstadoModeracionIsNotNullOrderByFechaEnvioDesc().stream()
+                .map(m -> new MensajeResponse(
+                        m.getId(),
+                        m.getEmisor().getId(),
+                        m.getEmisor().getNombre() + " " + m.getEmisor().getApellido(),
+                        m.getReceptor().getId(),
+                        m.getReceptor().getNombre() + " " + m.getReceptor().getApellido(),
+                        m.getHabitacion().getId(),
+                        m.getHabitacion().getTitulo(),
+                        m.getContenido(),
+                        m.isLeido(),
+                        m.getFechaEnvio(),
+                        m.isModerado(),
+                        m.getCategoriaModeracion(),
+                        m.isBloqueado(),
+                        m.getEstadoModeracion()
+                ))
+                .collect(Collectors.toList());
     }
 }

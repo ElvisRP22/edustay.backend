@@ -26,4 +26,12 @@ public interface AdminService {
     com.edustay.backend.dto.UsuarioAdminResponse cambiarRolDeUsuario(Long id, String nuevoRolStr);
 
     void eliminarUsuarioPermanente(Long id);
+
+    List<com.edustay.backend.dto.MensajeResponse> obtenerMensajesReportados();
+
+    void desestimarReporteMensaje(Long id);
+
+    void eliminarMensajeModerado(Long id);
+
+    List<com.edustay.backend.dto.MensajeResponse> obtenerHistorialModeracion();
 }

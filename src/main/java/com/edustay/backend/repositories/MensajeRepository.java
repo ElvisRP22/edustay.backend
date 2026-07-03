@@ -44,4 +44,11 @@ public interface MensajeRepository extends JpaRepository<Mensaje, Long> {
      * Mensajes enviados por un usuario
      */
     List<Mensaje> findByEmisorIdOrderByFechaEnvioDesc(Long emisorId);
+
+    /**
+     * Mensajes que han sido marcados como moderados/sospechosos
+     */
+    List<Mensaje> findByModeradoTrueOrderByFechaEnvioDesc();
+
+    List<Mensaje> findByEstadoModeracionIsNotNullOrderByFechaEnvioDesc();
 }

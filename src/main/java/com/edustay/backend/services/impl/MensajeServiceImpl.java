@@ -2,6 +2,7 @@ package com.edustay.backend.services.impl;
 
 import com.edustay.backend.dto.MensajeRequest;
 import com.edustay.backend.dto.MensajeResponse;
+import com.edustay.backend.dto.ResultadoModeracion;
 import com.edustay.backend.models.Habitacion;
 import com.edustay.backend.models.Mensaje;
 import com.edustay.backend.models.Usuario;
@@ -9,6 +10,7 @@ import com.edustay.backend.repositories.HabitacionRepository;
 import com.edustay.backend.repositories.MensajeRepository;
 import com.edustay.backend.repositories.UsuarioRepository;
 import com.edustay.backend.services.MensajeService;
+import com.edustay.backend.services.ModeracionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,9 @@ public class MensajeServiceImpl implements MensajeService {
     @Autowired
     private HabitacionRepository habitacionRepository;
 
+    @Autowired
+    private ModeracionService moderacionService;
+
     @Override
     public MensajeResponse enviarMensaje(Long emisorId, MensajeRequest request) {
         if (emisorId.equals(request.getReceptorId())) {
@@ -47,7 +52,20 @@ public class MensajeServiceImpl implements MensajeService {
         Habitacion habitacion = habitacionRepository.findById(request.getHabitacionId())
                 .orElseThrow(() -> new RuntimeException("Habitación no encontrada con id: " + request.getHabitacionId()));
 
+        // Evaluar la moderación del mensaje
+        ResultadoModeracion resultado = moderacionService.moderarContenido(request.getContenido());
+        if (resultado.isBlocked()) {
+            throw new IllegalArgumentException("Tu mensaje infringe las normas comunitarias de seguridad de EduStay (violencia/acoso detectado).");
+        }
+
         Mensaje mensaje = new Mensaje(emisor, receptor, habitacion, request.getContenido());
+        mensaje.setModerado(resultado.isFlagged());
+        mensaje.setCategoriaModeracion(resultado.getCategoria());
+        mensaje.setBloqueado(resultado.isBlocked());
+        if (resultado.isFlagged()) {
+            mensaje.setEstadoModeracion("PENDIENTE");
+        }
+
         mensajeRepository.save(mensaje);
         return convertirAResponse(mensaje);
     }
@@ -56,6 +74,7 @@ public class MensajeServiceImpl implements MensajeService {
     @Transactional(readOnly = true)
     public List<MensajeResponse> obtenerConversacion(Long habitacionId, Long usuarioA, Long usuarioB) {
         return mensajeRepository.findConversacion(habitacionId, usuarioA, usuarioB).stream()
+                .filter(m -> !m.isBloqueado())
                 .map(this::convertirAResponse)
                 .collect(Collectors.toList());
     }
@@ -64,6 +83,7 @@ public class MensajeServiceImpl implements MensajeService {
     @Transactional(readOnly = true)
     public List<MensajeResponse> obtenerBandejaEntrada(Long receptorId) {
         return mensajeRepository.findByReceptorIdOrderByFechaEnvioDesc(receptorId).stream()
+                .filter(m -> !m.isBloqueado())
                 .map(this::convertirAResponse)
                 .collect(Collectors.toList());
     }
@@ -96,7 +116,11 @@ public class MensajeServiceImpl implements MensajeService {
                 m.getHabitacion().getTitulo(),
                 m.getContenido(),
                 m.isLeido(),
-                m.getFechaEnvio()
+                m.getFechaEnvio(),
+                m.isModerado(),
+                m.getCategoriaModeracion(),
+                m.isBloqueado(),
+                m.getEstadoModeracion()
         );
     }
 }

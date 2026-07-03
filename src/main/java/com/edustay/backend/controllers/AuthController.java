@@ -6,6 +6,8 @@ import com.edustay.backend.dto.LoginRequest;
 import com.edustay.backend.dto.RegisterRequest;
 import com.edustay.backend.dto.VerifyEmailRequest;
 import com.edustay.backend.dto.ResendOtpRequest;
+import com.edustay.backend.dto.ForgotPasswordRequest;
+import com.edustay.backend.dto.ResetPasswordRequest;
 import com.edustay.backend.security.JwtTokenProvider;
 import com.edustay.backend.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -191,6 +193,50 @@ public class AuthController {
         try {
             authService.resendOtp(request.getEmail());
             return ResponseEntity.ok(Map.of("message", "Código de verificación reenviado exitosamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint para solicitar la recuperación de contraseña
+     */
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Solicitar recuperación de contraseña", description = "Envía un enlace para restablecer la contraseña si el email existe")
+    @ApiResponse(responseCode = "200", description = "Proceso iniciado (se devuelve siempre un mensaje genérico por seguridad)")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            authService.forgotPassword(request.getEmail());
+            return ResponseEntity.ok(Map.of("message", "Si el correo electrónico ingresado está registrado, recibirás un mensaje con un enlace para restablecer tu contraseña."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error al procesar la solicitud"));
+        }
+    }
+
+    /**
+     * Endpoint para verificar si un token de recuperación es válido
+     */
+    @GetMapping("/reset-password/verify")
+    @Operation(summary = "Verificar token de recuperación", description = "Verifica si un token UUID es válido y no ha expirado")
+    @ApiResponse(responseCode = "200", description = "Validación completada")
+    public ResponseEntity<?> verifyResetToken(@RequestParam String token) {
+        boolean valid = authService.validarTokenRestablecimiento(token);
+        return ResponseEntity.ok(Map.of("valid", valid));
+    }
+
+    /**
+     * Endpoint para guardar la nueva contraseña
+     */
+    @PostMapping("/reset-password")
+    @Operation(summary = "Restablecer contraseña", description = "Establece la nueva contraseña usando un token válido")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contraseña restablecida exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Token inválido o expirado")
+    })
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            authService.resetPassword(request.getToken(), request.getPassword());
+            return ResponseEntity.ok(Map.of("message", "Contraseña restablecida exitosamente. Ahora puedes iniciar sesión con tus nuevas credenciales."));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         }

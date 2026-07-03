@@ -1,6 +1,7 @@
 package com.edustay.backend.controllers;
 
 import com.edustay.backend.dto.UsuarioAdminResponse;
+import com.edustay.backend.dto.MensajeResponse;
 import com.edustay.backend.services.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -90,6 +91,70 @@ public class AdminController {
         try {
             adminService.eliminarUsuarioPermanente(id);
             return ResponseEntity.ok(Map.of("message", "Usuario eliminado de forma permanente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    /**
+     * GET /api/admin/mensajes/reportados - Obtiene todos los mensajes reportados/moderados
+     */
+    @GetMapping("/mensajes/reportados")
+    @Operation(summary = "Listar mensajes reportados", description = "Retorna todos los mensajes que han sido marcados como moderados/sospechosos (requiere rol ADMIN)")
+    public ResponseEntity<?> obtenerMensajesReportados(@RequestAttribute("userRole") String userRole) {
+        if (!esAdmin(userRole)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado: se requiere rol ADMIN");
+        }
+        List<MensajeResponse> response = adminService.obtenerMensajesReportados();
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/admin/mensajes/historial - Obtiene el historial completo de auditoría de moderación
+     */
+    @GetMapping("/mensajes/historial")
+    @Operation(summary = "Listar historial de moderación", description = "Retorna el historial completo de mensajes auditados, desestimados o eliminados (requiere rol ADMIN)")
+    public ResponseEntity<?> obtenerHistorialModeracion(@RequestAttribute("userRole") String userRole) {
+        if (!esAdmin(userRole)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado: se requiere rol ADMIN");
+        }
+        List<MensajeResponse> response = adminService.obtenerHistorialModeracion();
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * PATCH /api/admin/mensajes/{id}/desestimar - Desestima el reporte de un mensaje
+     */
+    @PatchMapping("/mensajes/{id}/desestimar")
+    @Operation(summary = "Desestimar reporte de mensaje", description = "Quita el flag de moderado al mensaje y limpia su categoría (requiere rol ADMIN)")
+    public ResponseEntity<?> desestimarReporteMensaje(
+            @PathVariable Long id,
+            @RequestAttribute("userRole") String userRole) {
+        if (!esAdmin(userRole)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado: se requiere rol ADMIN");
+        }
+        try {
+            adminService.desestimarReporteMensaje(id);
+            return ResponseEntity.ok(Map.of("message", "Reporte desestimado correctamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    /**
+     * DELETE /api/admin/mensajes/{id} - Elimina un mensaje moderado
+     */
+    @DeleteMapping("/mensajes/{id}")
+    @Operation(summary = "Eliminar mensaje moderado", description = "Elimina físicamente un mensaje del historial (requiere rol ADMIN)")
+    public ResponseEntity<?> eliminarMensajeModerado(
+            @PathVariable Long id,
+            @RequestAttribute("userRole") String userRole) {
+        if (!esAdmin(userRole)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Acceso denegado: se requiere rol ADMIN");
+        }
+        try {
+            adminService.eliminarMensajeModerado(id);
+            return ResponseEntity.ok(Map.of("message", "Mensaje eliminado correctamente de la conversación"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }

@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Positive;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -79,8 +78,7 @@ public class Habitacion {
     )
     private Set<Regla> reglas;
 
-    @ManyToMany(mappedBy = "habitacionesFavoritas")
-    private Set<Usuario> usuariosQueMeSiguen = new HashSet<>();
+
 
     public Habitacion() {
     }
@@ -128,11 +126,4 @@ public class Habitacion {
     public Set<Regla> getReglas() { return reglas; }
     public void setReglas(Set<Regla> reglas) { this.reglas = reglas; }
 
-    public Set<Usuario> getUsuariosQueMeSiguen() {
-        return usuariosQueMeSiguen;
-    }
-
-    public void setUsuariosQueMeSiguen(Set<Usuario> usuariosQueMeSiguen) {
-        this.usuariosQueMeSiguen = usuariosQueMeSiguen;
-    }
 }

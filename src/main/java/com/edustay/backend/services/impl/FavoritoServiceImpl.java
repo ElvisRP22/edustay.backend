@@ -72,7 +72,7 @@ public class FavoritoServiceImpl implements FavoritoService {
     }
 
     private HabitacionResponse convertirHabitacion(Habitacion h) {
-        return new HabitacionResponse(
+        HabitacionResponse response = new HabitacionResponse(
                 h.getId(),
                 h.getTitulo(),
                 h.getDescripcion(),
@@ -92,5 +92,13 @@ public class FavoritoServiceImpl implements FavoritoService {
                     .map(regla -> new ReglaResponse(regla.getId(), regla.getDescripcion()))
                     .collect(java.util.stream.Collectors.toSet())
         );
+        if (h.getFotos() != null) {
+            response.setFotos(h.getFotos().stream()
+                .map(com.edustay.backend.models.FotoHabitacion::getUrl)
+                .collect(Collectors.toList()));
+        } else {
+            response.setFotos(Collections.emptyList());
+        }
+        return response;
     }
 }

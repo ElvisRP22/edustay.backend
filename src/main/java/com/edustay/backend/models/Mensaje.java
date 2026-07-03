@@ -37,6 +37,18 @@ public class Mensaje {
     @Column(nullable = false)
     private boolean leido = false;
 
+    @Column(nullable = false)
+    private boolean moderado = false;
+
+    @Column(length = 100)
+    private String categoriaModeracion;
+
+    @Column(nullable = false)
+    private boolean bloqueado = false;
+
+    @Column(length = 50)
+    private String estadoModeracion;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaEnvio;
@@ -103,5 +115,37 @@ public class Mensaje {
 
     public LocalDateTime getFechaEnvio() {
         return fechaEnvio;
+    }
+
+    public boolean isModerado() {
+        return moderado;
+    }
+
+    public void setModerado(boolean moderado) {
+        this.moderado = moderado;
+    }
+
+    public String getCategoriaModeracion() {
+        return categoriaModeracion;
+    }
+
+    public void setCategoriaModeracion(String categoriaModeracion) {
+        this.categoriaModeracion = categoriaModeracion;
+    }
+
+    public boolean isBloqueado() {
+        return bloqueado;
+    }
+
+    public void setBloqueado(boolean bloqueado) {
+        this.bloqueado = bloqueado;
+    }
+
+    public String getEstadoModeracion() {
+        return estadoModeracion;
+    }
+
+    public void setEstadoModeracion(String estadoModeracion) {
+        this.estadoModeracion = estadoModeracion;
     }
 }

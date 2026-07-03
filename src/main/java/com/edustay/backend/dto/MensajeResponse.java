@@ -20,6 +20,10 @@ public class MensajeResponse {
     private String contenido;
     private boolean leido;
     private LocalDateTime fechaEnvio;
+    private boolean moderado;
+    private String categoriaModeracion;
+    private boolean bloqueado;
+    private String estadoModeracion;
 
     public MensajeResponse() {}
 
@@ -37,6 +41,36 @@ public class MensajeResponse {
         this.contenido = contenido;
         this.leido = leido;
         this.fechaEnvio = fechaEnvio;
+    }
+
+    public MensajeResponse(Long id, Long emisorId, String emisorNombre,
+                            Long receptorId, String receptorNombre,
+                            Long habitacionId, String habitacionTitulo,
+                            String contenido, boolean leido, LocalDateTime fechaEnvio,
+                            boolean moderado, String categoriaModeracion, boolean bloqueado) {
+        this.id = id;
+        this.emisorId = emisorId;
+        this.emisorNombre = emisorNombre;
+        this.receptorId = receptorId;
+        this.receptorNombre = receptorNombre;
+        this.habitacionId = habitacionId;
+        this.habitacionTitulo = habitacionTitulo;
+        this.contenido = contenido;
+        this.leido = leido;
+        this.fechaEnvio = fechaEnvio;
+        this.moderado = moderado;
+        this.categoriaModeracion = categoriaModeracion;
+        this.bloqueado = bloqueado;
+    }
+
+    public MensajeResponse(Long id, Long emisorId, String emisorNombre,
+                            Long receptorId, String receptorNombre,
+                            Long habitacionId, String habitacionTitulo,
+                            String contenido, boolean leido, LocalDateTime fechaEnvio,
+                            boolean moderado, String categoriaModeracion, boolean bloqueado,
+                            String estadoModeracion) {
+        this(id, emisorId, emisorNombre, receptorId, receptorNombre, habitacionId, habitacionTitulo, contenido, leido, fechaEnvio, moderado, categoriaModeracion, bloqueado);
+        this.estadoModeracion = estadoModeracion;
     }
 
     // --- Getters y Setters ---
@@ -70,4 +104,16 @@ public class MensajeResponse {
 
     public LocalDateTime getFechaEnvio() { return fechaEnvio; }
     public void setFechaEnvio(LocalDateTime fechaEnvio) { this.fechaEnvio = fechaEnvio; }
+
+    public boolean isModerado() { return moderado; }
+    public void setModerado(boolean moderado) { this.moderado = moderado; }
+
+    public String getCategoriaModeracion() { return categoriaModeracion; }
+    public void setCategoriaModeracion(String categoriaModeracion) { this.categoriaModeracion = categoriaModeracion; }
+
+    public boolean isBloqueado() { return bloqueado; }
+    public void setBloqueado(boolean bloqueado) { this.bloqueado = bloqueado; }
+
+    public String getEstadoModeracion() { return estadoModeracion; }
+    public void setEstadoModeracion(String estadoModeracion) { this.estadoModeracion = estadoModeracion; }
 }

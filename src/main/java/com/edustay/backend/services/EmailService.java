@@ -30,4 +30,9 @@ public interface EmailService {
      */
     void enviarResultadoVerificacionDocumento(String emailUsuario, String nombreUsuario, String tipoDocumento,
                                              String estadoDocumento, String comentarioAdmin, String estadoGlobalUsuario);
+
+    /**
+     * Envía un correo al usuario con el enlace para restablecer su contraseña.
+     */
+    void enviarEnlaceRestablecimiento(String destinatario, String nombreUsuario, String enlace);
 }

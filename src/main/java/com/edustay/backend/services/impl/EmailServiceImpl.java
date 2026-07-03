@@ -296,4 +296,55 @@ public class EmailServiceImpl implements EmailService {
             System.err.println("❌ Error al enviar correo de verificación: " + e.getMessage());
         }
     }
+
+    @Override
+    public void enviarEnlaceRestablecimiento(String destinatario, String nombreUsuario, String enlace) {
+        // Log de respaldo en consola
+        System.out.println("\n==================================================");
+        System.out.println("✉️ [EMAIL SENDER] Enviando enlace de restablecimiento a: " + destinatario);
+        System.out.println("🔗 Enlace: " + enlace);
+        System.out.println("==================================================\n");
+
+        if (apiKey == null || apiKey.isBlank() || apiKey.equals("re_default_key")) {
+            System.out.println("⚠️ Resend API Key no configurada. El enlace solo estará disponible en consola.");
+            return;
+        }
+
+        try {
+            String url = "https://api.resend.com/emails";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + apiKey);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("from", "EduStay <" + fromEmail + ">");
+            body.put("to", Collections.singletonList(destinatario));
+            body.put("subject", "EduStay - Restablecer tu contraseña");
+
+            String htmlContent = "<div style=\"font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);\">" +
+                    "  <h2 style=\"color: #1e3a8a; margin-top: 0;\">EduStay</h2>" +
+                    "  <p style=\"font-size: 16px; color: #334155;\">¡Hola, " + nombreUsuario + "!</p>" +
+                    "  <p style=\"font-size: 15px; color: #334155; line-height: 1.5;\">Recibimos una solicitud para restablecer la contraseña de tu cuenta en EduStay. Para continuar, haz clic en el siguiente enlace:</p>" +
+                    "  " +
+                    "  <div style=\"text-align: center; margin: 30px 0;\">" +
+                    "    <a href=\"" + enlace + "\" target=\"_blank\" style=\"background-color: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;\">Restablecer contraseña</a>" +
+                    "  </div>" +
+                    "  " +
+                    "  <p style=\"font-size: 14px; color: #64748b;\">Este enlace expirará en 15 minutos y solo puede ser usado una vez.</p>" +
+                    "  <p style=\"font-size: 14px; color: #64748b;\">Si no solicitaste este cambio, puedes ignorar este correo de forma segura. Tu contraseña no cambiará.</p>" +
+                    "  <hr style=\"border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;\" />" +
+                    "  <p style=\"font-size: 12px; color: #94a3b8; text-align: center;\">Este es un correo automático, por favor no respondas a este mensaje.</p>" +
+                    "</div>";
+
+            body.put("html", htmlContent);
+
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            restTemplate.postForEntity(url, requestEntity, String.class);
+            System.out.println("✅ Correo de restablecimiento de contraseña enviado exitosamente a: " + destinatario);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error al enviar correo de restablecimiento: " + e.getMessage());
+        }
+    }
 }
