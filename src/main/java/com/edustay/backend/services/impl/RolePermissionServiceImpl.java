@@ -3,30 +3,43 @@ package com.edustay.backend.services.impl;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.edustay.backend.dto.PermissionCatalogResponse;
 import com.edustay.backend.dto.RolePermissionRequest;
 import com.edustay.backend.dto.RolePermissionResponse;
+import com.edustay.backend.models.Permiso;
+import com.edustay.backend.models.Rol;
 import com.edustay.backend.models.Usuario;
 import com.edustay.backend.models.enums.UserRole;
+import com.edustay.backend.repositories.PermisoRepository;
+import com.edustay.backend.repositories.RolRepository;
 import com.edustay.backend.repositories.UsuarioRepository;
 import com.edustay.backend.services.RolePermissionService;
 
 import jakarta.annotation.PostConstruct;
 
 @Service
+@Transactional
 public class RolePermissionServiceImpl implements RolePermissionService {
+
+    @Autowired
+    private PermisoRepository permisoRepository;
+
+    @Autowired
+    private RolRepository rolRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     private static final List<PermissionCatalogResponse> CATALOGO_PERMISOS = List.of(
             new PermissionCatalogResponse(1L, "Ver panel y reportes",
@@ -47,43 +60,62 @@ public class RolePermissionServiceImpl implements RolePermissionService {
             new PermissionCatalogResponse(8L, "Resolver verificaciones",
                     "Permite aprobar o rechazar documentos pendientes.", "Moderación", "heroDocumentText"));
 
-    private static final Map<String, List<Long>> PERMISOS_BASE_POR_ROL = Map.of(
-            "ADMIN", List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L),
-            "ARRENDADOR", List.of(3L, 5L, 6L, 7L),
-            "ESTUDIANTE", List.of(3L, 7L));
-
-    private final Map<Long, RoleTemplate> roles = new LinkedHashMap<>();
-    private final AtomicLong nextRoleId = new AtomicLong(4L);
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private static final java.util.Map<String, List<String>> PERMISOS_BASE_POR_ROL = java.util.Map.of(
+            "ADMIN", List.of(
+                    "Ver panel y reportes", "Gestionar credenciales", "Ver usuarios", "Editar roles",
+                    "Administrar habitaciones", "Administrar alquileres", "Moderar mensajes", "Resolver verificaciones"
+            ),
+            "ARRENDADOR", List.of(
+                    "Ver usuarios", "Administrar habitaciones", "Administrar alquileres", "Moderar mensajes"
+            ),
+            "ESTUDIANTE", List.of(
+                    "Ver usuarios", "Moderar mensajes"
+            ));
 
     @PostConstruct
     public void init() {
-        roles.put(1L, new RoleTemplate(1L, "ADMIN",
-                "Control total sobre configuración, seguridad y moderación de la plataforma.", "#1d4ed8", "ACTIVO", 1,
-                Instant.now().toString(), new LinkedHashSet<>(PERMISOS_BASE_POR_ROL.get("ADMIN")), true));
-        roles.put(2L, new RoleTemplate(2L, "ARRENDADOR",
-                "Gestiona sus habitaciones, contratos y comunicaciones con estudiantes.", "#059669", "ACTIVO", 0,
-                Instant.now().toString(), new LinkedHashSet<>(PERMISOS_BASE_POR_ROL.get("ARRENDADOR")), true));
-        roles.put(3L,
-                new RoleTemplate(3L, "ESTUDIANTE",
-                        "Accede a búsqueda, mensajes, favoritos y su perfil de verificación.", "#7c3aed", "ACTIVO", 0,
-                        Instant.now().toString(), new LinkedHashSet<>(PERMISOS_BASE_POR_ROL.get("ESTUDIANTE")), true));
-        sincronizarConteosIniciales();
+        // 1. Sembrar el catálogo de permisos en la base de datos si no existen
+        for (PermissionCatalogResponse p : CATALOGO_PERMISOS) {
+            Optional<Permiso> existente = permisoRepository.findByTitle(p.getTitle());
+            if (existente.isEmpty()) {
+                permisoRepository.save(new Permiso(p.getTitle(), p.getDescription(), p.getArea(), p.getIcon()));
+            }
+        }
+
+        // 2. Sembrar los roles principales si no existen
+        sembrarRolSiNoExiste("ADMIN", "Control total sobre configuración, seguridad y moderación de la plataforma.", "#1d4ed8");
+        sembrarRolSiNoExiste("ARRENDADOR", "Gestiona sus habitaciones, contratos y comunicaciones con estudiantes.", "#059669");
+        sembrarRolSiNoExiste("ESTUDIANTE", "Accede a búsqueda, mensajes, favoritos y su perfil de verificación.", "#7c3aed");
+    }
+
+    private void sembrarRolSiNoExiste(String name, String description, String color) {
+        Optional<Rol> existente = rolRepository.findByNameIgnoreCase(name);
+        if (existente.isEmpty()) {
+            Rol rol = new Rol(name, description, color, "ACTIVO", true, Instant.now().toString());
+            List<String> titulosPermisos = PERMISOS_BASE_POR_ROL.get(name);
+            if (titulosPermisos != null) {
+                Set<Permiso> permisosAsociados = new HashSet<>();
+                for (String titulo : titulosPermisos) {
+                    permisoRepository.findByTitle(titulo).ifPresent(permisosAsociados::add);
+                }
+                rol.setPermisos(permisosAsociados);
+            }
+            rolRepository.save(rol);
+        }
     }
 
     @Override
     public List<RolePermissionResponse> listarRoles() {
-        sincronizarConteosIniciales();
-        return roles.values().stream()
+        return rolRepository.findAll().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<PermissionCatalogResponse> listarPermisos() {
-        return new ArrayList<>(CATALOGO_PERMISOS);
+        return permisoRepository.findAll().stream()
+                .map(p -> new PermissionCatalogResponse(p.getId(), p.getTitle(), p.getDescription(), p.getArea(), p.getIcon()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -91,72 +123,76 @@ public class RolePermissionServiceImpl implements RolePermissionService {
         String nombreNormalizado = normalizarNombre(request.getName());
         validarNombreDisponible(nombreNormalizado, null);
 
-        Long nuevoId = nextRoleId.getAndIncrement();
-        RoleTemplate role = new RoleTemplate(
-                nuevoId,
+        Rol rol = new Rol(
                 nombreNormalizado,
                 request.getDescription().trim(),
                 request.getColor().trim(),
                 normalizarEstado(request.getStatus()),
-                request.getUsers(),
-                Instant.now().toString(),
-                new LinkedHashSet<>(filtrarPermisosValidos(request.getPermissions())),
-                false);
+                false,
+                Instant.now().toString()
+        );
 
-        roles.put(nuevoId, role);
-        return toResponse(role);
+        if (request.getPermissions() != null) {
+            Set<Permiso> permisosValidos = new HashSet<>(permisoRepository.findAllById(request.getPermissions()));
+            rol.setPermisos(permisosValidos);
+        }
+
+        Rol guardado = rolRepository.save(rol);
+        return toResponse(guardado);
     }
 
     @Override
     public RolePermissionResponse actualizarRol(Long id, RolePermissionRequest request) {
-        RoleTemplate role = obtenerRoleInterno(id);
+        Rol rol = obtenerRolInterno(id);
         String nombreNormalizado = normalizarNombre(request.getName());
         validarNombreDisponible(nombreNormalizado, id);
 
-        role.name = nombreNormalizado;
-        role.description = request.getDescription().trim();
-        role.color = request.getColor().trim();
-        role.status = normalizarEstado(request.getStatus());
-        role.users = request.getUsers();
+        rol.setName(nombreNormalizado);
+        rol.setDescription(request.getDescription().trim());
+        rol.setColor(request.getColor().trim());
+        rol.setStatus(normalizarEstado(request.getStatus()));
+        rol.setUpdatedAt(Instant.now().toString());
+
         if (request.getPermissions() != null) {
-            role.permissions = new LinkedHashSet<>(filtrarPermisosValidos(request.getPermissions()));
+            Set<Permiso> permisosValidos = new HashSet<>(permisoRepository.findAllById(request.getPermissions()));
+            rol.setPermisos(permisosValidos);
         }
-        role.updatedAt = Instant.now().toString();
-        return toResponse(role);
+
+        Rol actualizado = rolRepository.save(rol);
+        return toResponse(actualizado);
     }
 
     @Override
     public RolePermissionResponse alternarPermiso(Long id, Long permissionId) {
-        RoleTemplate role = obtenerRoleInterno(id);
-        validarPermisoExiste(permissionId);
+        Rol rol = obtenerRolInterno(id);
+        Permiso permiso = permisoRepository.findById(permissionId)
+                .orElseThrow(() -> new IllegalArgumentException("Permiso no encontrado con id: " + permissionId));
 
-        if (role.permissions.contains(permissionId)) {
-            role.permissions.remove(permissionId);
+        if (rol.getPermisos().stream().anyMatch(p -> p.getId().equals(permissionId))) {
+            rol.getPermisos().removeIf(p -> p.getId().equals(permissionId));
         } else {
-            role.permissions.add(permissionId);
+            rol.getPermisos().add(permiso);
         }
 
-        role.updatedAt = Instant.now().toString();
-        return toResponse(role);
+        rol.setUpdatedAt(Instant.now().toString());
+        Rol guardado = rolRepository.save(rol);
+        return toResponse(guardado);
     }
 
     @Override
     public RolePermissionResponse restaurarPermisos(Long id) {
-        RoleTemplate role = obtenerRoleInterno(id);
-        List<Long> permisosBase = PERMISOS_BASE_POR_ROL.get(role.name.toUpperCase(Locale.ROOT));
-        role.permissions = permisosBase != null
-                ? new LinkedHashSet<>(permisosBase)
-                : new LinkedHashSet<>();
-        role.updatedAt = Instant.now().toString();
-        return toResponse(role);
-    }
-
-    private void sincronizarConteosIniciales() {
-        for (RoleTemplate role : roles.values()) {
-            if (role.builtIn) {
-                role.users = contarUsuariosPorRol(role.name);
+        Rol rol = obtenerRolInterno(id);
+        List<String> permisosBase = PERMISOS_BASE_POR_ROL.get(rol.getName().toUpperCase(Locale.ROOT));
+        Set<Permiso> nuevosPermisos = new HashSet<>();
+        if (permisosBase != null) {
+            for (String titulo : permisosBase) {
+                permisoRepository.findByTitle(titulo).ifPresent(nuevosPermisos::add);
             }
         }
+        rol.setPermisos(nuevosPermisos);
+        rol.setUpdatedAt(Instant.now().toString());
+        Rol guardado = rolRepository.save(rol);
+        return toResponse(guardado);
     }
 
     private int contarUsuariosPorRol(String nombreRol) {
@@ -173,31 +209,32 @@ public class RolePermissionServiceImpl implements RolePermissionService {
                 .count();
     }
 
-    private RolePermissionResponse toResponse(RoleTemplate role) {
+    private RolePermissionResponse toResponse(Rol rol) {
+        List<Long> permissionIds = rol.getPermisos().stream()
+                .map(Permiso::getId)
+                .collect(Collectors.toList());
+
         return new RolePermissionResponse(
-                role.id,
-                role.name,
-                role.description,
-                role.color,
-                role.status,
-                role.users,
-                role.updatedAt,
-                new ArrayList<>(role.permissions));
+                rol.getId(),
+                rol.getName(),
+                rol.getDescription(),
+                rol.getColor(),
+                rol.getStatus(),
+                contarUsuariosPorRol(rol.getName()),
+                rol.getUpdatedAt(),
+                permissionIds
+        );
     }
 
-    private RoleTemplate obtenerRoleInterno(Long id) {
-        RoleTemplate role = roles.get(id);
-        if (role == null) {
-            throw new RuntimeException("Rol no encontrado con id: " + id);
-        }
-        return role;
+    private Rol obtenerRolInterno(Long id) {
+        return rolRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado con id: " + id));
     }
 
     private void validarNombreDisponible(String nombre, Long idActual) {
-        for (RoleTemplate role : roles.values()) {
-            if (role.name.equalsIgnoreCase(nombre) && (idActual == null || !role.id.equals(idActual))) {
-                throw new IllegalArgumentException("Ya existe un rol con ese nombre");
-            }
+        Optional<Rol> existente = rolRepository.findByNameIgnoreCase(nombre);
+        if (existente.isPresent() && (idActual == null || !existente.get().getId().equals(idActual))) {
+            throw new IllegalArgumentException("Ya existe un rol con ese nombre");
         }
     }
 
@@ -218,55 +255,5 @@ public class RolePermissionServiceImpl implements RolePermissionService {
             throw new IllegalArgumentException("Estado inválido. Valores permitidos: ACTIVO, PAUSADO, BLOQUEADO");
         }
         return normalizado;
-    }
-
-    private List<Long> filtrarPermisosValidos(Collection<Long> permissionIds) {
-        if (permissionIds == null || permissionIds.isEmpty()) {
-            return List.of();
-        }
-
-        Set<Long> idsValidos = CATALOGO_PERMISOS.stream()
-                .map(PermissionCatalogResponse::getId)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        List<Long> filtrados = new ArrayList<>();
-        for (Long permissionId : permissionIds) {
-            if (permissionId != null && idsValidos.contains(permissionId) && !filtrados.contains(permissionId)) {
-                filtrados.add(permissionId);
-            }
-        }
-        return filtrados;
-    }
-
-    private void validarPermisoExiste(Long permissionId) {
-        boolean existe = CATALOGO_PERMISOS.stream().anyMatch(permission -> permission.getId().equals(permissionId));
-        if (!existe) {
-            throw new IllegalArgumentException("Permiso no encontrado con id: " + permissionId);
-        }
-    }
-
-    private static final class RoleTemplate {
-        private final Long id;
-        private String name;
-        private String description;
-        private String color;
-        private String status;
-        private Integer users;
-        private String updatedAt;
-        private LinkedHashSet<Long> permissions;
-        private final boolean builtIn;
-
-        private RoleTemplate(Long id, String name, String description, String color, String status,
-                Integer users, String updatedAt, LinkedHashSet<Long> permissions, boolean builtIn) {
-            this.id = id;
-            this.name = name;
-            this.description = description;
-            this.color = color;
-            this.status = status;
-            this.users = users;
-            this.updatedAt = updatedAt;
-            this.permissions = permissions;
-            this.builtIn = builtIn;
-        }
     }
 }
