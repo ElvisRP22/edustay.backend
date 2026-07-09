@@ -2,6 +2,7 @@ package com.edustay.backend.dto;
 
 import com.edustay.backend.models.enums.UserRole;
 import com.edustay.backend.models.enums.VerificationStatus;
+import java.util.List;
 
 /**
  * DTO para la respuesta de autenticación (login/register)
@@ -19,6 +20,7 @@ public class AuthResponse {
     private String message;
     private boolean emailVerificado;
     private VerificationStatus identidadVerificada;
+    private List<String> permisos;
 
     public AuthResponse() {
     }
@@ -135,5 +137,13 @@ public class AuthResponse {
 
     public void setIdentidadVerificada(VerificationStatus identidadVerificada) {
         this.identidadVerificada = identidadVerificada;
+    }
+
+    public List<String> getPermisos() {
+        return permisos;
+    }
+
+    public void setPermisos(List<String> permisos) {
+        this.permisos = permisos;
     }
 }

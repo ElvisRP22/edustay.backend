@@ -3,7 +3,9 @@ package com.edustay.backend.services.impl;
 import com.edustay.backend.dto.AuthResponse;
 import com.edustay.backend.dto.GoogleTokenDto;
 import com.edustay.backend.dto.LoginRequest;
+import com.edustay.backend.dto.PermissionCatalogResponse;
 import com.edustay.backend.dto.RegisterRequest;
+import com.edustay.backend.dto.RolePermissionResponse;
 import com.edustay.backend.models.Usuario;
 import com.edustay.backend.models.CodigoOtp;
 import com.edustay.backend.models.PasswordResetToken;
@@ -15,6 +17,7 @@ import com.edustay.backend.repositories.PasswordResetTokenRepository;
 import com.edustay.backend.security.JwtTokenProvider;
 import com.edustay.backend.services.AuthService;
 import com.edustay.backend.services.EmailService;
+import com.edustay.backend.services.RolePermissionService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
@@ -39,8 +42,6 @@ import java.util.UUID;
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
-
-
     @Autowired
     private UsuarioRepository usuarioRepository;
 
@@ -57,16 +58,59 @@ public class AuthServiceImpl implements AuthService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    // Inyecta aquí el servicio JWT actual (JwtTokenProvider) para reutilizar la generación del token propio de EduStay.
+    // Inyecta aquí el servicio JWT actual (JwtTokenProvider) para reutilizar la
+    // generación del token propio de EduStay.
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private RolePermissionService rolePermissionService;
 
     @Value("${app.google.client-id}")
     private String googleClientId;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
+    private List<String> getPermissionsForRole(String rolName) {
+        try {
+            Long roleId = null;
+            if ("ADMIN".equalsIgnoreCase(rolName)) {
+                roleId = 1L;
+            } else if ("ARRENDADOR".equalsIgnoreCase(rolName)) {
+                roleId = 2L;
+            } else if ("ESTUDIANTE".equalsIgnoreCase(rolName)) {
+                roleId = 3L;
+            }
+
+            if (roleId != null) {
+                final Long targetId = roleId;
+                List<RolePermissionResponse> roles = rolePermissionService.listarRoles();
+                List<PermissionCatalogResponse> catalog = rolePermissionService
+                        .listarPermisos();
+
+                List<Long> permissionIds = roles.stream()
+                        .filter(r -> r.getId().equals(targetId))
+                        .findFirst()
+                        .map(RolePermissionResponse::getPermissions)
+                        .orElse(List.of());
+
+                return permissionIds.stream()
+                        .map(id -> catalog.stream()
+                                .filter(p -> p.getId().equals(id))
+                                .findFirst()
+                                .map(PermissionCatalogResponse::getTitle)
+                                .orElse(""))
+                        .filter(title -> !title.isEmpty())
+                        .collect(java.util.stream.Collectors.toList());
+            }
+        } catch (Exception e) {
+            System.err.println("Error resolviendo permisos para el rol " + rolName + ": " + e.getMessage());
+        }
+        return List.of();
+    }
+
     /**
      * Realiza el login de un usuario
+     * 
      * @param loginRequest Datos del login (email y contraseña)
      * @return AuthResponse con el token y datos del usuario
      * @throws RuntimeException si las credenciales son inválidas
@@ -82,12 +126,15 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Contraseña incorrecta");
         }
 
+        // Obtener permisos para el rol
+        List<String> permisos = getPermissionsForRole(usuario.getRol().toString());
+
         // Generar el token JWT
         String token = jwtTokenProvider.generateToken(
                 usuario.getEmail(),
                 usuario.getId(),
-                usuario.getRol().toString()
-        );
+                usuario.getRol().toString(),
+                permisos);
 
         // Retornar la respuesta con el token
         AuthResponse response = new AuthResponse(
@@ -99,18 +146,20 @@ public class AuthServiceImpl implements AuthService {
                 usuario.getFotoUrl(),
                 usuario.getRol(),
                 token,
-                "Login exitoso"
-        );
+                "Login exitoso");
         response.setEmailVerificado(usuario.isEmailVerificado());
         response.setIdentidadVerificada(usuario.getIdentidadVerificada());
+        response.setPermisos(permisos);
         return response;
     }
 
     /**
      * Realiza el registro de un nuevo usuario
+     * 
      * @param registerRequest Datos del registro
      * @return AuthResponse con el token y datos del usuario creado
-     * @throws RuntimeException si el email ya está registrado o si las contraseñas no coinciden
+     * @throws RuntimeException si el email ya está registrado o si las contraseñas
+     *                          no coinciden
      */
     @Override
     public AuthResponse register(RegisterRequest registerRequest) {
@@ -131,11 +180,11 @@ public class AuthServiceImpl implements AuthService {
         nuevoUsuario.setEmail(registerRequest.getEmail());
         nuevoUsuario.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         nuevoUsuario.setTelefono(registerRequest.getTelefono());
-        
+
         // Asignar rol
         UserRole userRol = registerRequest.getRol() != null ? registerRequest.getRol() : UserRole.ESTUDIANTE;
         nuevoUsuario.setRol(userRol);
-        
+
         nuevoUsuario.setEmailVerificado(false);
         nuevoUsuario.setIdentidadVerificada(VerificationStatus.PENDIENTE);
 
@@ -151,12 +200,15 @@ public class AuthServiceImpl implements AuthService {
         // Enviar el correo electrónico real mediante Resend (con fallback en consola)
         emailService.enviarCodigoOtp(usuarioGuardado.getEmail(), otpCode);
 
+        // Obtener permisos para el rol
+        List<String> permisos = getPermissionsForRole(usuarioGuardado.getRol().toString());
+
         // Generar el token JWT
         String token = jwtTokenProvider.generateToken(
                 usuarioGuardado.getEmail(),
                 usuarioGuardado.getId(),
-                usuarioGuardado.getRol().toString()
-        );
+                usuarioGuardado.getRol().toString(),
+                permisos);
 
         // Retornar la respuesta con el token
         AuthResponse response = new AuthResponse(
@@ -168,16 +220,17 @@ public class AuthServiceImpl implements AuthService {
                 usuarioGuardado.getFotoUrl(),
                 usuarioGuardado.getRol(),
                 token,
-                "Registro exitoso. Se ha enviado un código de verificación a tu correo."
-        );
+                "Registro exitoso. Se ha enviado un código de verificación a tu correo.");
         response.setEmailVerificado(usuarioGuardado.isEmailVerificado());
         response.setIdentidadVerificada(usuarioGuardado.getIdentidadVerificada());
+        response.setPermisos(permisos);
         return response;
     }
 
     /**
      * Realiza el login social con Google.
-     * Verifica el token ID, crea el usuario si no existe y retorna el JWT propio de EduStay.
+     * Verifica el token ID, crea el usuario si no existe y retorna el JWT propio de
+     * EduStay.
      */
     @Override
     public AuthResponse loginConGoogle(GoogleTokenDto googleTokenDto) {
@@ -208,11 +261,14 @@ public class AuthServiceImpl implements AuthService {
             usuario = usuarioRepository.save(usuario);
         }
 
+        // Obtener permisos para el rol
+        List<String> permisos = getPermissionsForRole(usuario.getRol().toString());
+
         String token = jwtTokenProvider.generateToken(
                 usuario.getEmail(),
                 usuario.getId(),
-                usuario.getRol().toString()
-        );
+                usuario.getRol().toString(),
+                permisos);
 
         AuthResponse response = new AuthResponse(
                 usuario.getId(),
@@ -223,15 +279,16 @@ public class AuthServiceImpl implements AuthService {
                 usuario.getFotoUrl(),
                 usuario.getRol(),
                 token,
-                "Login con Google exitoso"
-        );
+                "Login con Google exitoso");
         response.setEmailVerificado(usuario.isEmailVerificado());
         response.setIdentidadVerificada(usuario.getIdentidadVerificada());
+        response.setPermisos(permisos);
         return response;
     }
 
     /**
      * Obtiene un usuario por su email
+     * 
      * @param email Email del usuario
      * @return Usuario si existe
      * @throws RuntimeException si el usuario no existe
@@ -244,6 +301,7 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * Verifica si un email ya está registrado
+     * 
      * @param email Email a verificar
      * @return true si el email existe, false si no
      */
@@ -254,7 +312,8 @@ public class AuthServiceImpl implements AuthService {
 
     private GoogleIdTokenVerifier buildGoogleIdTokenVerifier() {
         if (googleClientId == null || googleClientId.isBlank()) {
-            throw new RuntimeException("La configuración app.google.client-id es obligatoria para validar Google Sign-In");
+            throw new RuntimeException(
+                    "La configuración app.google.client-id es obligatoria para validar Google Sign-In");
         }
 
         return new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
@@ -316,7 +375,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void verifyEmail(String email, String codigo) {
-        CodigoOtp otp = codigoOtpRepository.findFirstByUsuarioEmailAndCodigoAndUsadoFalseOrderByExpiracionDesc(email, codigo)
+        CodigoOtp otp = codigoOtpRepository
+                .findFirstByUsuarioEmailAndCodigoAndUsadoFalseOrderByExpiracionDesc(email, codigo)
                 .orElseThrow(() -> new RuntimeException("Código de verificación incorrecto o ya utilizado"));
 
         if (otp.getExpiracion().isBefore(LocalDateTime.now())) {
@@ -376,7 +436,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Enlace al frontend
         String enlace = "http://localhost:4200/reset-password?token=" + token;
-        
+
         emailService.enviarEnlaceRestablecimiento(email, usuario.getNombre(), enlace);
     }
 
@@ -395,7 +455,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void resetPassword(String token, String nuevaPassword) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("El enlace de restablecimiento es inválido o ya ha sido utilizado"));
+                .orElseThrow(
+                        () -> new RuntimeException("El enlace de restablecimiento es inválido o ya ha sido utilizado"));
 
         if (resetToken.isUsado()) {
             throw new RuntimeException("El enlace de restablecimiento ya ha sido utilizado");

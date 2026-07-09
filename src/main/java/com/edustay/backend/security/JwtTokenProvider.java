@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -28,10 +29,11 @@ public class JwtTokenProvider {
     /**
      * Genera un JWT token a partir del email y otros datos
      */
-    public String generateToken(String email, Long userId, String rol) {
+    public String generateToken(String email, Long userId, String rol, List<String> permisos) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("rol", rol);
+        claims.put("permisos", permisos);
         return createToken(claims, email);
     }
 
@@ -78,6 +80,14 @@ public class JwtTokenProvider {
      */
     public String getRolFromToken(String token) {
         return getClaimFromToken(token, claims -> (String) claims.get("rol"));
+    }
+
+    /**
+     * Extrae los permisos del token
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getPermisosFromToken(String token) {
+        return getClaimFromToken(token, claims -> (List<String>) claims.get("permisos"));
     }
 
     /**
